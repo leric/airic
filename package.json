@@ -1,0 +1,39 @@
+{
+  "name": "airic",
+  "version": "0.1.0",
+  "description": "Markdown-configured agent kernel with ACP interface",
+  "type": "module",
+  "main": "dist/main.js",
+  "bin": {
+    "airic": "dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "agent",
+    "acp",
+    "markdown"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "^0.29.0",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^5.1.0",
+    "openai": "^6.44.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}

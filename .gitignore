@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.airic/sessions/
+.airic/logs/
+.airic/cache/
+.env
+*.log
