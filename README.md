@@ -2,6 +2,24 @@
 
 Markdown-configured agent kernel with an ACP (Agent Client Protocol) interface.
 
+## Step 2: File Tools + doc_type-aware Editing
+
+Airic can read workspace files, create files, propose reviewable edits, and load document-type specs when the current document declares `doc_type`.
+
+### Tools available to the agent
+
+- `list_files(path)`
+- `read_file(path)`
+- `create_file(path, content)`
+- `propose_edit(path, content)` — user must accept before write
+- `search_text(query, path?)`
+
+Edits are logged to `.airic/logs/edits.log` after acceptance.
+
+### Current document
+
+When a file is opened or focused in the ACP client, Airic sets `session.currentDocument` and includes the file in runtime context. If the file declares `doc_type` in frontmatter, the matching spec from `.airic/specs/document-types/` is loaded.
+
 ## Step 1: ACP Chat Agent
 
 Airic loads agent behavior from markdown specs under `.airic/` and exposes a chat interface via ACP.

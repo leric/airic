@@ -1,4 +1,7 @@
 import type * as acp from "@agentclientprotocol/sdk";
+import { fileUriToPath } from "../../application/services/path-resolver.js";
+
+export { fileUriToPath };
 
 export function extractUserMessage(prompt: acp.ContentBlock[]): string {
   const parts: string[] = [];
