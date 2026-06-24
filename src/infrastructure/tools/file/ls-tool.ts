@@ -1,5 +1,7 @@
 import { constants } from "node:fs";
 import { access, readdir, stat } from "node:fs/promises";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { resolveWithinWorkspace } from "../common/path-utils.js";
@@ -70,3 +72,24 @@ export const LS_TOOL_SCHEMA = {
     },
   },
 };
+
+export function createLsTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.LS,
+    kind: "read",
+    description: LS_TOOL_DESCRIPTION,
+    inputSchema: LS_TOOL_SCHEMA,
+    policy: "none",
+    confirmation: "none",
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `List ${path ?? "."}`,
+        kind: "read",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context) => executeLsTool(input as LsToolInput, context),
+  };
+}

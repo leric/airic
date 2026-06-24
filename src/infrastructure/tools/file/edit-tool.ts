@@ -1,5 +1,7 @@
 import { constants } from "node:fs";
 import { access, readFile, writeFile } from "node:fs/promises";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import {
@@ -165,3 +167,26 @@ export const EDIT_TOOL_SCHEMA = {
   },
   required: ["path", "edits"],
 };
+
+export function createEditTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.EDIT,
+    kind: "edit",
+    description: EDIT_TOOL_DESCRIPTION,
+    inputSchema: EDIT_TOOL_SCHEMA,
+    policy: "mutating",
+    confirmation: "diff",
+    sequential: true,
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `Edit ${path ?? "file"}`,
+        kind: "edit",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context, signal) =>
+      executeEditTool(input, context, signal),
+  };
+}

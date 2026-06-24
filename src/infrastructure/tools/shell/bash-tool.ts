@@ -1,6 +1,8 @@
 import { constants } from "node:fs";
 import { access } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import {
@@ -169,3 +171,32 @@ export const BASH_TOOL_SCHEMA = {
   },
   required: ["command"],
 };
+
+export function createBashTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.BASH,
+    kind: "execute",
+    description: BASH_TOOL_DESCRIPTION,
+    inputSchema: BASH_TOOL_SCHEMA,
+    policy: "mutating",
+    confirmation: "none",
+    present: (args) => ({
+      title: `$ ${String(args.command ?? "")}`,
+      kind: "execute",
+      rawInput: args,
+    }),
+    execute: (input, context, signal, onUpdate) =>
+      executeBashTool(
+        input as BashToolInput,
+        context,
+        signal,
+        onUpdate
+          ? (update) =>
+              onUpdate({
+                content: update.content,
+                details: update.details,
+              })
+          : undefined,
+      ),
+  };
+}

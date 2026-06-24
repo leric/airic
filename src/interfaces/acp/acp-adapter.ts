@@ -14,9 +14,8 @@ import { OpenDocumentUseCase } from "../../application/use-cases/file-editing.js
 import type { PendingEdit } from "../../domain/tool/pending-edit.js";
 import { PiAgentRuntime } from "../../infrastructure/agent/pi-agent-runtime.js";
 import { PiModelResolver } from "../../infrastructure/agent/pi-model-resolver.js";
-import { AiricToolExecutor } from "../../application/services/airic-tool-executor.js";
-import { KernelToolRegistry } from "../../application/services/kernel-tool-registry.js";
 import { DiffService } from "../../infrastructure/diff/diff-service.js";
+import { createKernelToolStack } from "../../infrastructure/tools/create-tool-runtime.js";
 import { mapAgentRuntimeEventToAcp } from "./acp-event-mapper.js";
 
 type SessionState = {
@@ -123,7 +122,7 @@ export class AcpAdapter {
       const runtime = await this.runtimeLoader.load(workspaceRoot);
       const sessionStore = this.sessionStoreFactory.forWorkspace(workspaceRoot);
       const editLog = new EditLog(this.fs, workspaceRoot);
-      const fileTools = new AiricToolExecutor({
+      const kernelTools = createKernelToolStack({
         fs: this.fs,
         sessionStore,
         diffService: new DiffService(),
@@ -138,7 +137,7 @@ export class AcpAdapter {
         fs: this.fs,
         editStore: this.editStore,
         editLog,
-        kernelTools: new KernelToolRegistry(fileTools),
+        kernelTools,
       });
 
       await sendMessage.execute({

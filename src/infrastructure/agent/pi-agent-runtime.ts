@@ -236,7 +236,7 @@ async function mapPiEvent(
       toolCallId: event.toolCallId,
       name: event.toolName,
       title: presentation.title,
-      kind: presentation.kind,
+      kind: toAgentToolKind(presentation.kind),
       rawInput: presentation.rawInput,
       locations: presentation.locations,
     });
@@ -260,6 +260,15 @@ function isLlmMessage(message: { role: string }): message is Message {
     message.role === "assistant" ||
     message.role === "toolResult"
   );
+}
+
+function toAgentToolKind(
+  kind: string,
+): "read" | "edit" | "search" | "execute" | "other" {
+  if (kind === "read" || kind === "edit" || kind === "search" || kind === "execute") {
+    return kind;
+  }
+  return "other";
 }
 
 function reconstructAiricResult(result: unknown): AiricToolResult {

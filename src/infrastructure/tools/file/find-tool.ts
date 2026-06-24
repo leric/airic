@@ -3,6 +3,8 @@ import { createInterface } from "node:readline";
 import { constants } from "node:fs";
 import { access, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { pathExists, resolveWithinWorkspace, toRelativePath } from "../common/path-utils.js";
@@ -240,3 +242,25 @@ export const FIND_TOOL_SCHEMA = {
   },
   required: ["pattern"],
 };
+
+export function createFindTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.FIND,
+    kind: "search",
+    description: FIND_TOOL_DESCRIPTION,
+    inputSchema: FIND_TOOL_SCHEMA,
+    policy: "none",
+    confirmation: "none",
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `Find ${String(args.pattern ?? "")}`,
+        kind: "search",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context, signal) =>
+      executeFindTool(input as FindToolInput, context, signal),
+  };
+}

@@ -1,5 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { withFileMutationQueue } from "../common/file-mutation-queue.js";
@@ -86,3 +88,26 @@ export const WRITE_TOOL_SCHEMA = {
   },
   required: ["path", "content"],
 };
+
+export function createWriteTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.WRITE,
+    kind: "edit",
+    description: WRITE_TOOL_DESCRIPTION,
+    inputSchema: WRITE_TOOL_SCHEMA,
+    policy: "mutating",
+    confirmation: "diff",
+    sequential: true,
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `Write ${path ?? "file"}`,
+        kind: "edit",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context, signal) =>
+      executeWriteTool(input as WriteToolInput, context, signal),
+  };
+}

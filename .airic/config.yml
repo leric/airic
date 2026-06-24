@@ -1,11 +1,10 @@
 default_role: core.thinking-partner
 
 llm:
-  provider: openai
-  model: gpt-4o
-  temperature: 0.7
-  max_tokens: 4096
-  thinking_level: off
+  provider: openai-compatible
+  model: ark-code-latest
+  base_url: https://ark.cn-beijing.volces.com/api/coding/v3
+  api_key: fb0ad24d-99e4-43f8-820a-56216bb86b5a
 
 packs:
   core: .airic/packs/core

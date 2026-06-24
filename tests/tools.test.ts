@@ -14,17 +14,17 @@ import { executeReadTool } from "../src/infrastructure/tools/file/read-tool.js";
 import { executeLsTool } from "../src/infrastructure/tools/file/ls-tool.js";
 import { executeFindTool } from "../src/infrastructure/tools/file/find-tool.js";
 import { executeGrepTool } from "../src/infrastructure/tools/file/grep-tool.js";
-import {
-  applyEditWrite,
-  executeEditTool,
-} from "../src/infrastructure/tools/file/edit-tool.js";
+import { applyPendingMutation } from "../src/infrastructure/tools/mutation-apply.js";
+import { executeEditTool } from "../src/infrastructure/tools/file/edit-tool.js";
 import {
   applyWrite,
   executeWriteTool,
 } from "../src/infrastructure/tools/file/write-tool.js";
 import { executeBashTool } from "../src/infrastructure/tools/shell/bash-tool.js";
 import { mapToolResultToAcpContent } from "../src/interfaces/acp/acp-tool-event-mapper.js";
-import { AiricToolExecutor } from "../src/application/services/airic-tool-executor.js";
+import { ToolExecutor } from "../src/application/services/tool-executor.js";
+import { MutationCoordinator } from "../src/application/services/mutation-coordinator.js";
+import { createDefaultToolRegistry } from "../src/infrastructure/tools/create-tool-registry.js";
 import { EditStore } from "../src/application/services/edit-store.js";
 import { EditLog } from "../src/application/services/edit-log.js";
 import { DiffService } from "../src/infrastructure/diff/diff-service.js";
@@ -176,7 +176,7 @@ describe("edit tool", () => {
     );
 
     expect(result.content.some((part) => part.type === "diff")).toBe(true);
-    await applyEditWrite(result, filePath);
+    await applyPendingMutation(filePath, result);
     await expect(readFile(filePath, "utf8")).resolves.toBe("hello Airic\n");
   });
 });
@@ -252,7 +252,7 @@ describe("ACP mapper", () => {
   });
 });
 
-describe("AiricToolExecutor policy", () => {
+describe("ToolExecutor policy", () => {
   it("invokes tool policy for bash", async () => {
     const root = await mkdtemp(join(tmpdir(), "airic-policy-"));
     const fs = new NodeFileSystem();
@@ -261,12 +261,16 @@ describe("AiricToolExecutor policy", () => {
     await sessionStore.save(session);
 
     let policyChecked = false;
-    const executor = new AiricToolExecutor({
-      fs,
-      sessionStore,
-      diffService: new DiffService(),
-      editStore: new EditStore(),
-      editLog: new EditLog(fs, root),
+    const registry = createDefaultToolRegistry({ fs });
+    const executor = new ToolExecutor({
+      registry,
+      mutationCoordinator: new MutationCoordinator({
+        fs,
+        sessionStore,
+        diffService: new DiffService(),
+        editStore: new EditStore(),
+        editLog: new EditLog(fs, root),
+      }),
       toolPolicy: {
         async check(call) {
           if (call.toolName === KERNEL_TOOL_NAMES.BASH) {

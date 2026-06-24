@@ -17,6 +17,8 @@ export type AiricConfig = {
   llm: {
     provider: LlmProvider;
     model: string;
+    baseUrl?: string;
+    apiKey?: string;
     temperature: number;
     maxTokens: number;
     thinkingLevel: ThinkingLevel;

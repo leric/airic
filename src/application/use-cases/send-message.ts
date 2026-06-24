@@ -8,13 +8,11 @@ import {
 } from "../services/runtime-context-builder.js";
 import type { WorkspaceRuntime } from "../services/workspace-runtime-loader.js";
 import { loadCurrentDocumentContext } from "../services/current-document-context.js";
-import { AiricToolExecutor } from "../services/airic-tool-executor.js";
-import {
-  KernelToolRegistry,
-} from "../services/kernel-tool-registry.js";
+import type { KernelToolRegistryPort } from "../services/kernel-tool-registry.js";
 import type { EditStore } from "../services/edit-store.js";
 import type { EditLog } from "../services/edit-log.js";
 import { DiffService } from "../../infrastructure/diff/diff-service.js";
+import { createKernelToolStack } from "../../infrastructure/tools/create-tool-runtime.js";
 import type {
   AgentRuntimeEvent,
   EditPermissionGate,
@@ -35,27 +33,25 @@ export type SendMessageDeps = {
   fs: FileSystemPort;
   editStore: EditStore;
   editLog: EditLog;
-  kernelTools?: KernelToolRegistry;
+  kernelTools?: KernelToolRegistryPort;
   contextBuilder?: RuntimeContextBuilder;
 };
 
 export class SendMessageUseCase {
   private readonly contextBuilder: RuntimeContextBuilder;
-  private readonly kernelTools: KernelToolRegistry;
+  private readonly kernelTools: KernelToolRegistryPort;
 
   constructor(private readonly deps: SendMessageDeps) {
     this.contextBuilder = deps.contextBuilder ?? new RuntimeContextBuilder();
     this.kernelTools =
       deps.kernelTools ??
-      new KernelToolRegistry(
-        new AiricToolExecutor({
-          fs: deps.fs,
-          sessionStore: deps.sessionStore,
-          diffService: new DiffService(),
-          editStore: deps.editStore,
-          editLog: deps.editLog,
-        }),
-      );
+      createKernelToolStack({
+        fs: deps.fs,
+        sessionStore: deps.sessionStore,
+        diffService: new DiffService(),
+        editStore: deps.editStore,
+        editLog: deps.editLog,
+      });
   }
 
   async execute(input: SendMessageInput): Promise<string> {

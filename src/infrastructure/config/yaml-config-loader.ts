@@ -16,6 +16,8 @@ export class YamlConfigLoader implements ConfigLoaderPort {
       llm: {
         provider: readString(readObject(parsed.llm).provider, "openai"),
         model: readString(readObject(parsed.llm).model, "gpt-4o"),
+        baseUrl: readOptionalString(readObject(parsed.llm).base_url),
+        apiKey: readOptionalString(readObject(parsed.llm).api_key),
         temperature: readNumber(readObject(parsed.llm).temperature, 0.7),
         maxTokens: readNumber(readObject(parsed.llm).max_tokens, 4096),
         thinkingLevel: readThinkingLevel(readObject(parsed.llm).thinking_level),
@@ -59,6 +61,10 @@ function readObject(value: unknown): Record<string, unknown> {
 
 function readString(value: unknown, fallback: string): string {
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function readNumber(value: unknown, fallback: number): number {

@@ -5,7 +5,7 @@ import type {
   AgentTurnResult,
 } from "../src/application/ports/agent-runtime-port.js";
 import { SendMessageUseCase } from "../src/application/use-cases/send-message.js";
-import { KernelToolRegistry } from "../src/application/services/kernel-tool-registry.js";
+import type { KernelToolRegistryPort } from "../src/application/services/kernel-tool-registry.js";
 import { RuntimeContextBuilder } from "../src/application/services/runtime-context-builder.js";
 import { createSession } from "../src/domain/session/session.js";
 import type { SessionStorePort } from "../src/application/ports/session-store-port.js";
@@ -106,7 +106,11 @@ describe("SendMessageUseCase", () => {
       fs: {} as never,
       editStore: {} as never,
       editLog: {} as never,
-      kernelTools: new KernelToolRegistry({ execute: async () => "ok" } as never),
+      kernelTools: {
+        definitions: () => [],
+        handler: () => undefined,
+        presentToolCall: (name) => ({ title: name, kind: "other", rawInput: {} }),
+      } satisfies KernelToolRegistryPort,
       contextBuilder: new RuntimeContextBuilder(),
     });
 

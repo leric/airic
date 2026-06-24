@@ -21,3 +21,10 @@ export function extractTextFromToolResult(result: AiricToolResult): string {
     .map((part) => part.text)
     .join("");
 }
+
+export function findDiffContent(result: AiricToolResult) {
+  return result.content.find(
+    (part): part is Extract<AiricToolResult["content"][number], { type: "diff" }> =>
+      part.type === "diff",
+  );
+}

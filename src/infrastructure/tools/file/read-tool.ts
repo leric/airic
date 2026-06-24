@@ -1,5 +1,7 @@
 import { constants } from "node:fs";
 import { access, readFile } from "node:fs/promises";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { resolveReadPathAsync } from "../common/path-utils.js";
@@ -114,3 +116,25 @@ export const READ_TOOL_SCHEMA = {
   },
   required: ["path"],
 };
+
+export function createReadTool(): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.READ,
+    kind: "read",
+    description: READ_TOOL_DESCRIPTION,
+    inputSchema: READ_TOOL_SCHEMA,
+    policy: "none",
+    confirmation: "none",
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `Read ${path ?? "file"}`,
+        kind: "read",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context, signal) =>
+      executeReadTool(input as ReadToolInput, context, signal),
+  };
+}

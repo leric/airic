@@ -4,6 +4,8 @@ import { constants } from "node:fs";
 import { access, readFile, stat } from "node:fs/promises";
 import { basename, relative } from "node:path";
 import type { FileSystemPort } from "../../../application/ports/file-system-port.js";
+import type { AiricToolDefinition } from "../../../domain/tool/tool.js";
+import { KERNEL_TOOL_NAMES } from "../../../domain/tool/tool-names.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { resolveWithinWorkspace } from "../common/path-utils.js";
@@ -310,3 +312,25 @@ export const GREP_TOOL_SCHEMA = {
   },
   required: ["pattern"],
 };
+
+export function createGrepTool(deps: { fs: FileSystemPort }): AiricToolDefinition {
+  return {
+    name: KERNEL_TOOL_NAMES.GREP,
+    kind: "search",
+    description: GREP_TOOL_DESCRIPTION,
+    inputSchema: GREP_TOOL_SCHEMA,
+    policy: "none",
+    confirmation: "none",
+    present: (args) => {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      return {
+        title: `Grep /${String(args.pattern ?? "")}/`,
+        kind: "search",
+        rawInput: args,
+        locations: path ? [{ path }] : undefined,
+      };
+    },
+    execute: (input, context, signal) =>
+      executeGrepTool(input as GrepToolInput, context, signal, { fs: deps.fs }),
+  };
+}

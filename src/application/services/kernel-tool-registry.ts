@@ -2,42 +2,15 @@
  * Pi Agent Core tool bridge.
  *
  * Named `KernelToolRegistry` (not `AiricToolRegistry` from docs/tools-plan.md) because
- * it adapts Airic tool definitions into Pi Agent Core's AgentTool shape. See
- * architecture-map.md → Tool layer routing.
+ * it adapts Airic tool definitions into Pi Agent Core's AgentTool shape. Tool definitions
+ * come from ToolRegistryPort — the single source of truth. See architecture-map.md.
  */
 import type { Session } from "../../domain/session/session.js";
-import { KERNEL_TOOL_NAMES } from "../../domain/tool/tool-names.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";
+import type { ToolCallPresentation } from "../../domain/tool/tool-presentation.js";
 import type { EditPermissionGate } from "../ports/agent-runtime-port.js";
+import type { ToolRegistryPort } from "../ports/tool-registry-port.js";
 import type { ToolExecutorPort } from "../ports/tool-executor-port.js";
-import {
-  BASH_TOOL_DESCRIPTION,
-  BASH_TOOL_SCHEMA,
-} from "../../infrastructure/tools/shell/bash-tool.js";
-import {
-  EDIT_TOOL_DESCRIPTION,
-  EDIT_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/edit-tool.js";
-import {
-  FIND_TOOL_DESCRIPTION,
-  FIND_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/find-tool.js";
-import {
-  GREP_TOOL_DESCRIPTION,
-  GREP_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/grep-tool.js";
-import {
-  LS_TOOL_DESCRIPTION,
-  LS_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/ls-tool.js";
-import {
-  READ_TOOL_DESCRIPTION,
-  READ_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/read-tool.js";
-import {
-  WRITE_TOOL_DESCRIPTION,
-  WRITE_TOOL_SCHEMA,
-} from "../../infrastructure/tools/file/write-tool.js";
 
 export type KernelToolHandler = (
   session: Session,
@@ -58,12 +31,7 @@ export type KernelToolDefinition = {
   sequential?: boolean;
 };
 
-export type ToolCallPresentation = {
-  title: string;
-  kind: "read" | "edit" | "search" | "execute" | "other";
-  rawInput: Record<string, unknown>;
-  locations?: Array<{ path: string }>;
-};
+export type { ToolCallPresentation };
 
 export interface KernelToolRegistryPort {
   definitions(): KernelToolDefinition[];
@@ -74,62 +42,24 @@ export interface KernelToolRegistryPort {
   ): ToolCallPresentation;
 }
 
-const KERNEL_TOOL_DEFINITIONS: KernelToolDefinition[] = [
-  {
-    name: KERNEL_TOOL_NAMES.READ,
-    description: READ_TOOL_DESCRIPTION,
-    kind: "read",
-    parameters: READ_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.LS,
-    description: LS_TOOL_DESCRIPTION,
-    kind: "read",
-    parameters: LS_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.FIND,
-    description: FIND_TOOL_DESCRIPTION,
-    kind: "search",
-    parameters: FIND_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.GREP,
-    description: GREP_TOOL_DESCRIPTION,
-    kind: "search",
-    parameters: GREP_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.EDIT,
-    description: EDIT_TOOL_DESCRIPTION,
-    kind: "edit",
-    sequential: true,
-    parameters: EDIT_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.WRITE,
-    description: WRITE_TOOL_DESCRIPTION,
-    kind: "edit",
-    sequential: true,
-    parameters: WRITE_TOOL_SCHEMA,
-  },
-  {
-    name: KERNEL_TOOL_NAMES.BASH,
-    description: BASH_TOOL_DESCRIPTION,
-    kind: "execute",
-    parameters: BASH_TOOL_SCHEMA,
-  },
-];
-
 export class KernelToolRegistry implements KernelToolRegistryPort {
-  constructor(private readonly executor: ToolExecutorPort) {}
+  constructor(
+    private readonly executor: ToolExecutorPort,
+    private readonly registry: ToolRegistryPort,
+  ) {}
 
   definitions(): KernelToolDefinition[] {
-    return KERNEL_TOOL_DEFINITIONS;
+    return this.registry.list().map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.inputSchema,
+      kind: kernelKind(tool.kind),
+      sequential: tool.sequential,
+    }));
   }
 
   handler(name: string): KernelToolHandler | undefined {
-    if (!KERNEL_TOOL_DEFINITIONS.some((tool) => tool.name === name)) {
+    if (!this.registry.get(name)) {
       return undefined;
     }
 
@@ -146,64 +76,24 @@ export class KernelToolRegistry implements KernelToolRegistryPort {
     name: string,
     args: Record<string, unknown>,
   ): ToolCallPresentation {
-    const definition = KERNEL_TOOL_DEFINITIONS.find((tool) => tool.name === name);
-    const path = typeof args.path === "string" ? args.path : undefined;
-
-    switch (name) {
-      case KERNEL_TOOL_NAMES.READ:
-        return {
-          title: `Read ${path ?? "file"}`,
-          kind: "read",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.LS:
-        return {
-          title: `List ${path ?? "."}`,
-          kind: "read",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.FIND:
-        return {
-          title: `Find ${String(args.pattern ?? "")}`,
-          kind: "search",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.GREP:
-        return {
-          title: `Grep /${String(args.pattern ?? "")}/`,
-          kind: "search",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.EDIT:
-        return {
-          title: `Edit ${path ?? "file"}`,
-          kind: "edit",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.WRITE:
-        return {
-          title: `Write ${path ?? "file"}`,
-          kind: "edit",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.BASH:
-        return {
-          title: `$ ${String(args.command ?? "")}`,
-          kind: "execute",
-          rawInput: args,
-        };
-      default:
-        return {
-          title: name,
-          kind: definition?.kind ?? "other",
-          rawInput: args,
-        };
+    const tool = this.registry.get(name);
+    if (tool?.present) {
+      return tool.present(args);
     }
+
+    return {
+      title: name,
+      kind: tool ? kernelKind(tool.kind) : "other",
+      rawInput: args,
+    };
   }
+}
+
+function kernelKind(
+  kind: string,
+): "read" | "edit" | "search" | "execute" | "other" {
+  if (kind === "read" || kind === "edit" || kind === "search" || kind === "execute") {
+    return kind;
+  }
+  return "other";
 }
