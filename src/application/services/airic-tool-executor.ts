@@ -1,4 +1,5 @@
 import type { Session } from "../../domain/session/session.js";
+import { resolveWithinWorkspace } from "../../domain/path/workspace-path.js";
 import type { AiricToolContext } from "../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import { KERNEL_TOOL_NAMES } from "../../domain/tool/tool-names.js";
@@ -7,6 +8,10 @@ import type { FileSystemPort } from "../ports/file-system-port.js";
 import type { SessionStorePort } from "../ports/session-store-port.js";
 import type { ToolPolicyPort } from "../ports/tool-policy-port.js";
 import { AllowAllToolPolicy } from "../ports/tool-policy-port.js";
+import type {
+  ToolExecutionEvents,
+  ToolExecutorPort,
+} from "../ports/tool-executor-port.js";
 import {
   ProposeFileEditUseCase,
   ApplyFileEditUseCase,
@@ -14,7 +19,6 @@ import {
 import type { EditStore } from "./edit-store.js";
 import type { EditLog } from "./edit-log.js";
 import type { DiffService } from "../../infrastructure/diff/diff-service.js";
-import { resolveWithinWorkspace } from "../../infrastructure/tools/common/path-utils.js";
 import { findDiffContent } from "../../infrastructure/tools/common/tool-result-format.js";
 import {
   applyEditWrite,
@@ -30,12 +34,7 @@ import {
 } from "../../infrastructure/tools/file/write-tool.js";
 import { executeBashTool } from "../../infrastructure/tools/shell/bash-tool.js";
 
-export type ToolExecutionEvents = {
-  onProposeEdit?: (
-    edit: import("../../domain/tool/pending-edit.js").PendingEdit,
-    toolCallId: string,
-  ) => Promise<"allow" | "reject">;
-};
+export type { ToolExecutionEvents } from "../ports/tool-executor-port.js";
 
 export type AiricToolExecutorDeps = {
   fs: FileSystemPort;
@@ -52,7 +51,7 @@ const MUTATING_TOOLS = new Set<string>([
   KERNEL_TOOL_NAMES.BASH,
 ]);
 
-export class AiricToolExecutor {
+export class AiricToolExecutor implements ToolExecutorPort {
   private readonly proposeEdit: ProposeFileEditUseCase;
   private readonly applyEdit: ApplyFileEditUseCase;
   private readonly toolPolicy: ToolPolicyPort;
@@ -140,6 +139,7 @@ export class AiricToolExecutor {
           },
           context,
           ctx.signal,
+          { fs: this.deps.fs },
         );
         break;
       case KERNEL_TOOL_NAMES.EDIT:

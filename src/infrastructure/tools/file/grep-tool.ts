@@ -3,6 +3,7 @@ import { createInterface } from "node:readline";
 import { constants } from "node:fs";
 import { access, readFile, stat } from "node:fs/promises";
 import { basename, relative } from "node:path";
+import type { FileSystemPort } from "../../../application/ports/file-system-port.js";
 import type { AiricToolContext } from "../../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../../domain/tool/tool-result.js";
 import { resolveWithinWorkspace } from "../common/path-utils.js";
@@ -15,6 +16,10 @@ import {
 } from "../common/truncate.js";
 
 const DEFAULT_LIMIT = 100;
+
+export type GrepToolDeps = {
+  fs: FileSystemPort;
+};
 
 export type GrepToolInput = {
   pattern: string;
@@ -169,9 +174,8 @@ async function grepWithNodeFallback(
   searchPath: string,
   isDirectory: boolean,
   effectiveLimit: number,
+  fs: FileSystemPort,
 ): Promise<{ outputLines: string[]; matchLimitReached: boolean; linesTruncated: boolean }> {
-  const { NodeFileSystem } = await import("../../fs/node-file-system.js");
-  const fs = new NodeFileSystem();
   const matches = await fs.searchText(searchPath, input.pattern);
   const outputLines: string[] = [];
   let linesTruncated = false;
@@ -196,6 +200,7 @@ export async function executeGrepTool(
   input: GrepToolInput,
   context: AiricToolContext,
   signal?: AbortSignal,
+  deps?: GrepToolDeps,
 ): Promise<AiricToolResult> {
   if (signal?.aborted) {
     throw new Error("Operation aborted");
@@ -218,7 +223,16 @@ export async function executeGrepTool(
     result = await grepWithRg(input, searchPath, isDirectory, effectiveLimit, signal);
   } catch (error) {
     if (error instanceof Error && error.message === "rg_not_available") {
-      result = await grepWithNodeFallback(input, searchPath, isDirectory, effectiveLimit);
+      if (!deps?.fs) {
+        throw new Error("ripgrep (rg) is not available and no FileSystemPort was provided for fallback search");
+      }
+      result = await grepWithNodeFallback(
+        input,
+        searchPath,
+        isDirectory,
+        effectiveLimit,
+        deps.fs,
+      );
     } else {
       throw error;
     }

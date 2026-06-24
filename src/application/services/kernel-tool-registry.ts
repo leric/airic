@@ -1,8 +1,15 @@
+/**
+ * Pi Agent Core tool bridge.
+ *
+ * Named `KernelToolRegistry` (not `AiricToolRegistry` from docs/tools-plan.md) because
+ * it adapts Airic tool definitions into Pi Agent Core's AgentTool shape. See
+ * architecture-map.md → Tool layer routing.
+ */
 import type { Session } from "../../domain/session/session.js";
 import { KERNEL_TOOL_NAMES } from "../../domain/tool/tool-names.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import type { EditPermissionGate } from "../ports/agent-runtime-port.js";
-import type { AiricToolExecutor } from "./airic-tool-executor.js";
+import type { ToolExecutorPort } from "../ports/tool-executor-port.js";
 import {
   BASH_TOOL_DESCRIPTION,
   BASH_TOOL_SCHEMA,
@@ -115,7 +122,7 @@ const KERNEL_TOOL_DEFINITIONS: KernelToolDefinition[] = [
 ];
 
 export class KernelToolRegistry implements KernelToolRegistryPort {
-  constructor(private readonly executor: AiricToolExecutor) {}
+  constructor(private readonly executor: ToolExecutorPort) {}
 
   definitions(): KernelToolDefinition[] {
     return KERNEL_TOOL_DEFINITIONS;

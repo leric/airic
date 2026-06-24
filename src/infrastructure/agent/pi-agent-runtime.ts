@@ -179,6 +179,9 @@ function mapAiricResultToPi(result: AiricToolResult) {
     }),
     details: {
       ...result.details,
+      // Pi Agent Core content blocks cannot carry ACP diff payloads. Preserve the
+      // full AiricToolResult here so tool_call_end → ACP mapper can emit diff content.
+      // See architecture-map.md → Boundary debts.
       _airicResult: result,
     },
   };

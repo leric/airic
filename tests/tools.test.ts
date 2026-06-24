@@ -145,10 +145,13 @@ describe("grep tool", () => {
   it("finds matches with line numbers via node fallback", async () => {
     const root = await mkdtemp(join(tmpdir(), "airic-grep-"));
     await writeFile(join(root, "sample.ts"), "const answer = 42;\n", "utf8");
+    const fs = new NodeFileSystem();
 
     const result = await executeGrepTool(
       { pattern: "answer", literal: true },
       { cwd: root, sessionId: "s1" },
+      undefined,
+      { fs },
     );
 
     const text = (result.content[0] as { text: string }).text;
