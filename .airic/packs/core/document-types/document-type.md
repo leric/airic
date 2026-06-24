@@ -1,23 +1,62 @@
 ---
 id: core.document-type
 doc_type: core.document-type
-title: Document-Type Spec
+title: Document Type
 ---
 
-# Document-Type Spec
+# Document Type
 
-A document-type spec describes what a good user document of that type should contain.
+A document type defines what a good document of a certain kind should be.
 
-Document-type specs are resolved when a user markdown file explicitly declares `doc_type` in frontmatter (for example `doc_type: core.decision`).
+It gives the agent a standard for reading, reviewing, creating, and editing documents.
 
-## Frontmatter
+A document type is not a rigid schema. It is a quality standard written primarily in prose.
 
-- `id`: unique document-type identifier (for example `core.decision`)
-- `doc_type`: must be `core.document-type`
-- `title`: human-readable name
+## Purpose
 
-## Body
+Use a document type when a class of documents needs stable expectations.
 
-Describe the purpose, expected sections, quality bar, and review criteria for documents of this type.
+A good document type helps the agent understand:
 
-Concrete document-type instances (such as decision or note) are installed under `.airic/specs/document-types/`, not in the core pack.
+- what the document is for
+- what it should contain
+- what makes it useful
+- what makes it incomplete
+- how it should be reviewed
+- how it should be improved
+
+## What a Document Type Should Contain
+
+A document type should define:
+
+- the purpose of the document
+- when this document type should be used
+- what good examples usually clarify
+- what common failure modes to avoid
+- how the agent should help edit or review it
+
+It may describe expected sections, but sections are guidance, not mandatory structure unless explicitly stated.
+
+## What a Document Type Should Avoid
+
+A document type should not overfit to one document instance.
+
+It should not become:
+
+- a template for a single file
+- a workflow
+- a task instruction
+- a hidden data schema
+- a checklist that replaces judgment
+
+If a concept is specific to a domain, it should usually live in a scenario pack, not in Core Pack.
+
+## Editing Guidance
+
+When editing a document-type document:
+
+- preserve the document type's semantic purpose
+- keep standards general enough to apply across many documents
+- avoid excessive examples that narrow the concept
+- separate quality criteria from process steps
+- prefer prose standards over rigid fields
