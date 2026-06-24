@@ -42,6 +42,7 @@ export type AgentSystemContext = {
 export type AgentTurnInput = {
   sessionId: string;
   userMessage: string;
+  priorMessages: TranscriptMessage[];
   llm: AiricConfig["llm"];
   systemContext: AgentSystemContext;
   session: import("../../domain/session/session.js").Session;
@@ -53,10 +54,19 @@ export type AgentTurnInput = {
 
 export type AgentTurnResult = {
   assistantText: string;
-  transcript: TranscriptMessage[];
+  turnMessages: TranscriptMessage[];
+};
+
+export type AgentCompleteInput = {
+  llm: AiricConfig["llm"];
+  systemPrompt: string;
+  messages: TranscriptMessage[];
+  prompt: string;
+  signal?: AbortSignal;
 };
 
 export interface AgentRuntimePort {
   runTurn(input: AgentTurnInput): Promise<AgentTurnResult>;
+  complete(input: AgentCompleteInput): Promise<string>;
   abort(sessionId: string): void;
 }

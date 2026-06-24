@@ -9,7 +9,7 @@
 |---|---|---|
 | Entities / domain | `src/domain/` | Session, specs, tool contracts, workspace path rules. No Pi/ACP/Node fs types in tool domain. |
 | Use cases / application | `src/application/use-cases/` | Send message, file editing, bootstrap. |
-| Application services | `src/application/services/` | Runtime context, tool executor, mutation coordinator, Pi bridge. |
+| Application services | `src/application/services/` | Runtime context (system prompt), session sumup prompts, tool executor, mutation coordinator, Pi bridge. |
 | Ports | `src/application/ports/` | FileSystem, SessionStore, AgentRuntime, ToolPolicy, ToolRegistry, ToolExecutor, … |
 | Adapters (infrastructure) | `src/infrastructure/` | Pi agent runtime, Node fs, tools, diff, config, store. |
 | Delivery (ACP) | `src/interfaces/acp/` | ACP adapter, event mappers, message mappers. |
@@ -20,7 +20,7 @@
 
 | Use case | Purpose | Location | Ports used | Key entities |
 |---|---|---|---|---|
-| Send message | Run one agent turn with tools | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort | Session, Transcript |
+| Send message | Run one agent turn with tools; dispatch `/digin`, `/sumup`, `/tree` | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root) | Session, TurnNode |
 | Propose / apply edit | User-confirmed file mutation | `use-cases/file-editing.ts` | FileSystemPort, SessionStorePort | PendingEdit |
 | Bootstrap workspace | Initialize `.airic/` layout | `use-cases/bootstrap-workspace.ts` | FileSystemPort | — |
 | Open document | Set current document + doc_type | `use-cases/file-editing.ts` | FileSystemPort, SpecRegistry | Session |
@@ -34,7 +34,7 @@
 | ToolExecutorPort | Execute agent tools by name | `ports/tool-executor-port.ts` | `ToolExecutor` | `tests/tools.test.ts` |
 | ToolPolicyPort | Allow/deny mutating tools | `ports/tool-policy-port.ts` | `AllowAllToolPolicy` | `tests/tools.test.ts` |
 | KernelToolRegistryPort | Tool defs + Pi handler bridge | `services/kernel-tool-registry.ts` | `KernelToolRegistry` | `tests/kernel-tool-registry.test.ts` |
-| AgentRuntimePort | LLM turn + tool rounds | `ports/agent-runtime-port.ts` | `PiAgentRuntime` | `tests/send-message.test.ts` |
+| AgentRuntimePort | LLM turn + tool rounds; ephemeral completion for `/sumup` | `ports/agent-runtime-port.ts` | `PiAgentRuntime` | `tests/send-message.test.ts` |
 | SessionStorePort | Persist session state | `ports/session-store-port.ts` | `JsonSessionStore` | integration tests |
 
 ## Tool layer routing
@@ -67,7 +67,8 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 
 | Entity | Owns | Location |
 |---|---|---|
-| Session | workspace root, transcript, current document | `domain/session/` |
+| Session | workspace root, turn tree (cursor + dig stack), current document | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md) |
+| TurnNode | one user+assistant exchange in the session tree | `domain/session/turn-node.ts` |
 | PendingEdit | proposed mutation before user accept | `domain/tool/pending-edit.ts` |
 | AiricToolDefinition | tool metadata + execute + optional present | `domain/tool/tool.ts` |
 | AiricToolResult | tool output shape (text, diff, terminal) | `domain/tool/tool-result.ts` |
@@ -78,8 +79,11 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 - New use case → `src/application/use-cases/`, depend on ports not adapters.
 - New port → `src/application/ports/`, shaped by use-case need not provider API.
 - New tool → `create*Tool()` factory + register in `createDefaultToolRegistry()`.
-- Wire runtime → `createKernelToolStack(deps)` at composition root (ACP adapter, send-message default).
+- Wire runtime → `createKernelToolStack(deps)` at composition root only (`interfaces/acp/acp-adapter.ts`). Use cases must not import infrastructure factories.
 - Workspace path resolution → `domain/path/workspace-path.ts`.
+- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder`.
+- `/sumup` prompt format → `application/services/session-sumup-builder.ts` (spec: `docs/session-tree.md` §10–11).
+- Session tree field defaults → `domain/session/ensure-session-tree.ts` (in-memory) and `JsonSessionStore.get()` (persistence).
 - Dependency direction: domain ← application ← infrastructure; interfaces/acp calls application.
 
 ## Boundary debts
@@ -89,6 +93,7 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 | MutationCoordinator → mutation-apply | Application imports one infrastructure helper for queued writes | Coupling isolated to coordinator | Accepted |
 | Pi content model vs AiricToolResult | `_airicResult` in `pi-agent-runtime` details | ACP diff lost if removed | Documented in code |
 | ToolExecutor → infrastructure | Executor has no tool imports; registry factory lives in infrastructure | Clean separation achieved | Resolved |
+| SendMessageUseCase → infrastructure | Use case previously defaulted `createKernelToolStack` internally | Layer bypass copied by future use cases | Resolved — `kernelTools` required; wired in ACP adapter |
 
 ## Open ownership questions
 

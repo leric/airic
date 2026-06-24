@@ -135,8 +135,6 @@ export class AcpAdapter {
         agentRuntime: this.agentRuntime,
         runtime,
         fs: this.fs,
-        editStore: this.editStore,
-        editLog,
         kernelTools,
       });
 

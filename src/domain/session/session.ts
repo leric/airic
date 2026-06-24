@@ -1,11 +1,4 @@
-import type { TranscriptMessage } from "../agent/transcript.js";
-
-export type ChatRole = "user" | "assistant" | "system";
-
-export type ChatMessage = {
-  role: ChatRole;
-  content: string;
-};
+import type { DigFrame, TurnNode } from "./turn-node.js";
 
 export type Session = {
   id: string;
@@ -13,8 +6,12 @@ export type Session = {
   roleId?: string;
   currentDocument?: string;
   activeProcess?: string;
-  transcript: TranscriptMessage[];
-  messages: ChatMessage[];
+
+  rootTurnId?: string;
+  currentTurnId?: string;
+  turns: Record<string, TurnNode>;
+  digStack: DigFrame[];
+
   createdAt: string;
   updatedAt: string;
 };
@@ -29,8 +26,8 @@ export function createSession(
     id,
     workspaceRoot,
     roleId,
-    transcript: [],
-    messages: [],
+    turns: {},
+    digStack: [],
     createdAt: now,
     updatedAt: now,
   };

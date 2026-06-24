@@ -7,6 +7,7 @@ import {
 } from "@earendil-works/pi-agent-core";
 import { Type, type Message, type TSchema } from "@earendil-works/pi-ai";
 import type {
+  AgentCompleteInput,
   AgentRuntimePort,
   AgentTurnInput,
   AgentTurnResult,
@@ -32,7 +33,7 @@ export class PiAgentRuntime implements AgentRuntimePort {
     const model = this.modelResolver.resolve(input.llm);
 
     const piTools = buildPiTools(input);
-    const piMessages = toPiMessages(input.session.transcript, {
+    const piMessages = toPiMessages(input.priorMessages, {
       provider: model.provider,
       model: model.id,
       api: model.api,
@@ -99,15 +100,67 @@ export class PiAgentRuntime implements AgentRuntimePort {
 
       const llmMessages = agent.state.messages.filter(isLlmMessage);
       const assistantText = extractAssistantText(llmMessages);
-      const transcript = fromPiMessages(llmMessages);
+      const fullTranscript = fromPiMessages(llmMessages);
+      const turnMessages = fullTranscript.slice(input.priorMessages.length);
 
       await input.onEvent({ type: "run_end", assistantText });
 
-      return { assistantText, transcript };
+      return { assistantText, turnMessages };
     } finally {
       input.signal?.removeEventListener("abort", abortListener);
       unsubscribe();
       this.activeAgents.delete(input.sessionId);
+    }
+  }
+
+  async complete(input: AgentCompleteInput): Promise<string> {
+    const model = this.modelResolver.resolve(input.llm);
+    const piMessages = toPiMessages(input.messages, {
+      provider: model.provider,
+      model: model.id,
+      api: model.api,
+    });
+
+    const streamFn: StreamFn = (streamModel, context, options) =>
+      this.modelResolver.streamSimple(streamModel, context, {
+        ...options,
+        temperature: input.llm.temperature,
+        maxTokens: input.llm.maxTokens,
+        reasoning:
+          input.llm.thinkingLevel && input.llm.thinkingLevel !== "off"
+            ? input.llm.thinkingLevel
+            : undefined,
+        signal: input.signal ?? options?.signal,
+      });
+
+    const agent = new Agent({
+      initialState: {
+        systemPrompt: input.systemPrompt,
+        model,
+        thinkingLevel:
+          input.llm.thinkingLevel && input.llm.thinkingLevel !== "off"
+            ? input.llm.thinkingLevel
+            : "off",
+        tools: [],
+        messages: piMessages,
+      },
+      convertToLlm,
+      streamFn,
+    });
+
+    const abortListener = () => {
+      agent.abort();
+    };
+    input.signal?.addEventListener("abort", abortListener);
+
+    try {
+      await agent.prompt(input.prompt);
+      await agent.waitForIdle();
+
+      const llmMessages = agent.state.messages.filter(isLlmMessage);
+      return extractAssistantText(llmMessages);
+    } finally {
+      input.signal?.removeEventListener("abort", abortListener);
     }
   }
 

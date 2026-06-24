@@ -1,8 +1,4 @@
 import type { SpecDocument } from "../../domain/spec/spec-document.js";
-import {
-  bootstrapTranscriptFromMessages,
-} from "../../domain/agent/transcript.js";
-import type { Session } from "../../domain/session/session.js";
 import type { AgentSystemContext } from "../ports/agent-runtime-port.js";
 import type { CurrentDocumentContext } from "./current-document-context.js";
 
@@ -13,6 +9,7 @@ export type RuntimeContextInput = {
 };
 
 export class RuntimeContextBuilder {
+  /** Builds the system prompt only. Message history context is `projectCursorPath()` in `domain/session/turn-tree.ts`. */
   buildSystemPrompt(input: RuntimeContextInput): string {
     const systemParts = [
       input.baseInstruction.trim(),
@@ -67,15 +64,5 @@ export class RuntimeContextBuilder {
         });
       },
     };
-  }
-}
-
-export function ensureSessionTranscript(session: Session): void {
-  if (!session.transcript) {
-    session.transcript = [];
-  }
-
-  if (session.transcript.length === 0 && session.messages.length > 0) {
-    session.transcript = bootstrapTranscriptFromMessages(session.messages);
   }
 }
