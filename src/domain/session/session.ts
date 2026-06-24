@@ -1,3 +1,5 @@
+import type { TranscriptMessage } from "../agent/transcript.js";
+
 export type ChatRole = "user" | "assistant" | "system";
 
 export type ChatMessage = {
@@ -11,6 +13,7 @@ export type Session = {
   roleId?: string;
   currentDocument?: string;
   activeProcess?: string;
+  transcript: TranscriptMessage[];
   messages: ChatMessage[];
   createdAt: string;
   updatedAt: string;
@@ -26,6 +29,7 @@ export function createSession(
     id,
     workspaceRoot,
     roleId,
+    transcript: [],
     messages: [],
     createdAt: now,
     updatedAt: now,

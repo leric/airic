@@ -1,14 +1,10 @@
 import * as acp from "@agentclientprotocol/sdk";
 import { randomUUID } from "node:crypto";
 import type { FileSystemPort } from "../../application/ports/file-system-port.js";
-import { OpenAiLlmFactory } from "../../infrastructure/llm/openai-llm.js";
 import { YamlConfigLoader } from "../../infrastructure/config/yaml-config-loader.js";
 import { SessionStoreFactory } from "../../infrastructure/store/json-session-store.js";
 import { bootstrapWorkspace } from "../../application/use-cases/bootstrap-workspace.js";
-import {
-  SendMessageUseCase,
-  type ToolBridge,
-} from "../../application/use-cases/send-message.js";
+import { SendMessageUseCase } from "../../application/use-cases/send-message.js";
 import { WorkspaceRuntimeLoader } from "../../application/services/workspace-runtime-loader.js";
 import { createSession } from "../../domain/session/session.js";
 import { extractUserMessage, fileUriToPath } from "./acp-message-mapper.js";
@@ -16,6 +12,12 @@ import { EditStore } from "../../application/services/edit-store.js";
 import { EditLog } from "../../application/services/edit-log.js";
 import { OpenDocumentUseCase } from "../../application/use-cases/file-editing.js";
 import type { PendingEdit } from "../../domain/tool/pending-edit.js";
+import { PiAgentRuntime } from "../../infrastructure/agent/pi-agent-runtime.js";
+import { PiModelResolver } from "../../infrastructure/agent/pi-model-resolver.js";
+import { FileToolExecutor } from "../../application/services/file-tool-executor.js";
+import { KernelToolRegistry } from "../../application/services/kernel-tool-registry.js";
+import { DiffService } from "../../infrastructure/diff/diff-service.js";
+import { mapAgentRuntimeEventToAcp } from "./acp-event-mapper.js";
 
 type SessionState = {
   pendingPrompt: AbortController | null;
@@ -29,14 +31,16 @@ export class AcpAdapter {
   private readonly configLoader: YamlConfigLoader;
   private readonly sessionStoreFactory: SessionStoreFactory;
   private readonly runtimeLoader: WorkspaceRuntimeLoader;
-  private readonly llmFactory: OpenAiLlmFactory;
+  private readonly agentRuntime: PiAgentRuntime;
+  private readonly modelResolver: PiModelResolver;
 
   constructor(fs: FileSystemPort) {
     this.fs = fs;
     this.configLoader = new YamlConfigLoader(fs);
     this.sessionStoreFactory = new SessionStoreFactory(fs);
     this.runtimeLoader = new WorkspaceRuntimeLoader(fs, this.configLoader);
-    this.llmFactory = new OpenAiLlmFactory();
+    this.modelResolver = new PiModelResolver();
+    this.agentRuntime = new PiAgentRuntime(this.modelResolver);
   }
 
   async initialize(
@@ -118,35 +122,34 @@ export class AcpAdapter {
     try {
       const runtime = await this.runtimeLoader.load(workspaceRoot);
       const sessionStore = this.sessionStoreFactory.forWorkspace(workspaceRoot);
-      const llm = this.llmFactory.create(runtime.config);
       const editLog = new EditLog(this.fs, workspaceRoot);
+      const fileTools = new FileToolExecutor({
+        fs: this.fs,
+        sessionStore,
+        diffService: new DiffService(),
+        editStore: this.editStore,
+        editLog,
+      });
 
       const sendMessage = new SendMessageUseCase({
         sessionStore,
-        llm,
+        agentRuntime: this.agentRuntime,
         runtime,
         fs: this.fs,
         editStore: this.editStore,
         editLog,
+        kernelTools: new KernelToolRegistry(fileTools),
       });
 
       await sendMessage.execute({
         sessionId: params.sessionId,
         userMessage,
         signal: sessionState.pendingPrompt.signal,
-        onChunk: async (text) => {
-          await cx.notify(acp.methods.client.session.update, {
-            sessionId: params.sessionId,
-            update: {
-              sessionUpdate: "agent_message_chunk",
-              content: {
-                type: "text",
-                text,
-              },
-            },
-          });
+        onEvent: async (event) => {
+          await mapAgentRuntimeEventToAcp(params.sessionId, event, cx);
         },
-        toolBridge: this.createToolBridge(params.sessionId, cx),
+        permissionGate: (edit, toolCallId) =>
+          this.requestEditPermission(params.sessionId, cx, edit, toolCallId),
       });
     } catch (error) {
       if (sessionState.pendingPrompt.signal.aborted) {
@@ -195,54 +198,8 @@ export class AcpAdapter {
   }
 
   async cancel(params: acp.CancelNotification): Promise<void> {
+    this.agentRuntime.abort(params.sessionId);
     this.sessions.get(params.sessionId)?.pendingPrompt?.abort();
-  }
-
-  private createToolBridge(
-    sessionId: string,
-    cx: acp.AgentContext,
-  ): ToolBridge {
-    return {
-      onToolCallStart: async (toolCall) => {
-        await cx.notify(acp.methods.client.session.update, {
-          sessionId,
-          update: {
-            sessionUpdate: "tool_call",
-            toolCallId: toolCall.toolCallId,
-            title: toolCall.title,
-            kind: toolCall.kind,
-            status: "in_progress",
-            rawInput: toolCall.rawInput,
-            locations: toolCall.locations,
-          },
-        });
-      },
-      onToolCallUpdate: async (update) => {
-        await cx.notify(acp.methods.client.session.update, {
-          sessionId,
-          update: {
-            sessionUpdate: "tool_call_update",
-            toolCallId: update.toolCallId,
-            status: update.status,
-            content: update.content
-              ? [
-                  {
-                    type: "content",
-                    content: {
-                      type: "text",
-                      text: update.content,
-                    },
-                  },
-                ]
-              : undefined,
-            rawOutput: update.rawOutput,
-          },
-        });
-      },
-      onProposeEdit: async (edit, toolCallId) => {
-        return this.requestEditPermission(sessionId, cx, edit, toolCallId);
-      },
-    };
   }
 
   private async requestEditPermission(

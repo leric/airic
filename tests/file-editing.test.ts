@@ -33,10 +33,9 @@ describe("Step 2 file editing", () => {
       body: "Decision standards",
     };
 
-    const messages = builder.build({
+    const prompt = builder.buildSystemPrompt({
       baseInstruction: "Base",
       roleSpec,
-      chatHistory: [],
       currentDocument: {
         path: "/tmp/docs/decision.md",
         relativePath: "docs/decision.md",
@@ -46,8 +45,8 @@ describe("Step 2 file editing", () => {
       },
     });
 
-    expect(messages[0]?.content).toContain("Decision standards");
-    expect(messages[0]?.content).toContain("doc_type: core.decision");
+    expect(prompt).toContain("Decision standards");
+    expect(prompt).toContain("doc_type: core.decision");
   });
 
   it("proposes and applies an edit with audit log", async () => {

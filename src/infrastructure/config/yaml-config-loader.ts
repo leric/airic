@@ -14,10 +14,11 @@ export class YamlConfigLoader implements ConfigLoaderPort {
     return {
       defaultRole: readString(parsed.default_role, "core.thinking-partner"),
       llm: {
-        provider: "openai",
+        provider: readString(readObject(parsed.llm).provider, "openai"),
         model: readString(readObject(parsed.llm).model, "gpt-4o"),
         temperature: readNumber(readObject(parsed.llm).temperature, 0.7),
         maxTokens: readNumber(readObject(parsed.llm).max_tokens, 4096),
+        thinkingLevel: readThinkingLevel(readObject(parsed.llm).thinking_level),
       },
       packs: {
         core: readString(readObject(parsed.packs).core, ".airic/packs/core"),
@@ -66,6 +67,22 @@ function readNumber(value: unknown, fallback: number): number {
 
 function readBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function readThinkingLevel(
+  value: unknown,
+): import("../../application/ports/config-loader-port.js").ThinkingLevel {
+  if (
+    value === "off" ||
+    value === "minimal" ||
+    value === "low" ||
+    value === "medium" ||
+    value === "high" ||
+    value === "xhigh"
+  ) {
+    return value;
+  }
+  return "off";
 }
 
 export function resolveWorkspacePath(

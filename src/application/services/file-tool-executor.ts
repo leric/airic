@@ -1,6 +1,5 @@
 import type { PendingEdit } from "../../domain/tool/pending-edit.js";
 import type { Session } from "../../domain/session/session.js";
-import type { LlmToolCall } from "../ports/llm-port.js";
 import type { FileSystemPort } from "../ports/file-system-port.js";
 import type { SessionStorePort } from "../ports/session-store-port.js";
 import { KERNEL_TOOL_NAMES } from "../../domain/tool/tool-names.js";
@@ -12,6 +11,12 @@ import {
 import type { EditStore } from "./edit-store.js";
 import type { EditLog } from "./edit-log.js";
 import type { DiffService } from "../../infrastructure/diff/diff-service.js";
+
+export type ToolCallRequest = {
+  id: string;
+  name: string;
+  arguments: string;
+};
 
 export type ToolExecutionEvents = {
   onProposeEdit: (
@@ -49,7 +54,7 @@ export class FileToolExecutor {
 
   async execute(
     session: Session,
-    toolCall: LlmToolCall,
+    toolCall: ToolCallRequest,
     events: ToolExecutionEvents,
   ): Promise<string> {
     const args = parseToolArguments(toolCall.arguments);

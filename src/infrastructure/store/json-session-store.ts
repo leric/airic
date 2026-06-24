@@ -2,6 +2,7 @@ import { join } from "node:path";
 import type { SessionStorePort } from "../../application/ports/session-store-port.js";
 import type { FileSystemPort } from "../../application/ports/file-system-port.js";
 import type { Session } from "../../domain/session/session.js";
+import { bootstrapTranscriptFromMessages } from "../../domain/agent/transcript.js";
 
 export class JsonSessionStore implements SessionStorePort {
   constructor(
@@ -21,7 +22,14 @@ export class JsonSessionStore implements SessionStorePort {
     }
 
     const raw = await this.fs.readText(path);
-    return JSON.parse(raw) as Session;
+    const session = JSON.parse(raw) as Session;
+    if (!session.transcript) {
+      session.transcript = bootstrapTranscriptFromMessages(session.messages ?? []);
+    }
+    if (!session.messages) {
+      session.messages = [];
+    }
+    return session;
   }
 
   async save(session: Session): Promise<void> {

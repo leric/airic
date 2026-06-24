@@ -1,17 +1,19 @@
-import type { ChatMessage } from "../../domain/session/session.js";
 import type { SpecDocument } from "../../domain/spec/spec-document.js";
-import type { LlmMessage } from "../ports/llm-port.js";
+import {
+  bootstrapTranscriptFromMessages,
+} from "../../domain/agent/transcript.js";
+import type { Session } from "../../domain/session/session.js";
+import type { AgentSystemContext } from "../ports/agent-runtime-port.js";
 import type { CurrentDocumentContext } from "./current-document-context.js";
 
 export type RuntimeContextInput = {
   baseInstruction: string;
   roleSpec: SpecDocument;
-  chatHistory: ChatMessage[];
   currentDocument?: CurrentDocumentContext;
 };
 
 export class RuntimeContextBuilder {
-  build(input: RuntimeContextInput): LlmMessage[] {
+  buildSystemPrompt(input: RuntimeContextInput): string {
     const systemParts = [
       input.baseInstruction.trim(),
       "",
@@ -30,7 +32,12 @@ export class RuntimeContextBuilder {
         systemParts.push(`doc_type: ${input.currentDocument.docType}`);
       }
 
-      systemParts.push("", "```markdown", input.currentDocument.content.trim(), "```");
+      systemParts.push(
+        "",
+        "```markdown",
+        input.currentDocument.content.trim(),
+        "```",
+      );
 
       if (input.currentDocument.documentTypeSpec) {
         systemParts.push(
@@ -41,23 +48,34 @@ export class RuntimeContextBuilder {
       }
     }
 
-    const messages: LlmMessage[] = [
-      {
-        role: "system",
-        content: systemParts.join("\n"),
+    return systemParts.join("\n");
+  }
+
+  buildAgentContext(
+    input: RuntimeContextInput,
+    refreshCurrentDocument: () => Promise<CurrentDocumentContext | undefined>,
+  ): AgentSystemContext {
+    const staticPrompt = this.buildSystemPrompt(input);
+
+    return {
+      systemPrompt: staticPrompt,
+      refreshSystemPrompt: async () => {
+        const currentDocument = await refreshCurrentDocument();
+        return this.buildSystemPrompt({
+          ...input,
+          currentDocument,
+        });
       },
-    ];
+    };
+  }
+}
 
-    for (const message of input.chatHistory) {
-      if (message.role === "system") {
-        continue;
-      }
-      messages.push({
-        role: message.role,
-        content: message.content,
-      });
-    }
+export function ensureSessionTranscript(session: Session): void {
+  if (!session.transcript) {
+    session.transcript = [];
+  }
 
-    return messages;
+  if (session.transcript.length === 0 && session.messages.length > 0) {
+    session.transcript = bootstrapTranscriptFromMessages(session.messages);
   }
 }

@@ -3,7 +3,7 @@ import { RuntimeContextBuilder } from "../src/application/services/runtime-conte
 import type { SpecDocument } from "../src/domain/spec/spec-document.js";
 
 describe("RuntimeContextBuilder", () => {
-  it("combines base instruction, role spec, and chat history", () => {
+  it("combines base instruction, role spec, and current document", () => {
     const builder = new RuntimeContextBuilder();
     const roleSpec: SpecDocument = {
       path: "role.md",
@@ -13,20 +13,51 @@ describe("RuntimeContextBuilder", () => {
       body: "# Role\n\nAsk thoughtful questions.",
     };
 
-    const messages = builder.build({
+    const prompt = builder.buildSystemPrompt({
       baseInstruction: "You are Airic.",
       roleSpec,
-      chatHistory: [
-        { role: "user", content: "Hello" },
-        { role: "assistant", content: "Hi there." },
-        { role: "user", content: "Help me think." },
-      ],
+      currentDocument: {
+        relativePath: "notes/example.md",
+        content: "# Example",
+        docType: "core.note",
+      },
     });
 
-    expect(messages[0]?.role).toBe("system");
-    expect(messages[0]?.content).toContain("You are Airic.");
-    expect(messages[0]?.content).toContain("Ask thoughtful questions.");
-    expect(messages).toHaveLength(4);
-    expect(messages[3]?.content).toBe("Help me think.");
+    expect(prompt).toContain("You are Airic.");
+    expect(prompt).toContain("Ask thoughtful questions.");
+    expect(prompt).toContain("notes/example.md");
+    expect(prompt).toContain("# Example");
+  });
+
+  it("refreshes system prompt via buildAgentContext", async () => {
+    const builder = new RuntimeContextBuilder();
+    const roleSpec: SpecDocument = {
+      path: "role.md",
+      frontmatter: { id: "core.thinking-partner", doc_type: "core.role" },
+      id: "core.thinking-partner",
+      docType: "core.role",
+      body: "Role body",
+    };
+
+    let currentPath = "a.md";
+    const context = builder.buildAgentContext(
+      {
+        baseInstruction: "Base",
+        roleSpec,
+        currentDocument: {
+          relativePath: currentPath,
+          content: "A",
+        },
+      },
+      async () => ({
+        relativePath: "b.md",
+        content: "B",
+      }),
+    );
+
+    expect(context.systemPrompt).toContain("a.md");
+    const refreshed = await context.refreshSystemPrompt();
+    expect(refreshed).toContain("b.md");
+    expect(refreshed).not.toContain("a.md");
   });
 });

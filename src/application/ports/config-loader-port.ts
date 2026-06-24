@@ -1,10 +1,25 @@
+export type LlmProvider =
+  | "openai"
+  | "anthropic"
+  | "openrouter"
+  | (string & {});
+
+export type ThinkingLevel =
+  | "off"
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh";
+
 export type AiricConfig = {
   defaultRole: string;
   llm: {
-    provider: "openai";
+    provider: LlmProvider;
     model: string;
     temperature: number;
     maxTokens: number;
+    thinkingLevel: ThinkingLevel;
   };
   packs: {
     core: string;
