@@ -18,12 +18,12 @@ import type { SpecDocument } from "../src/domain/spec/spec-document.js";
 describe("Step 2 file editing", () => {
   it("loads document-type spec when current document declares doc_type", async () => {
     const builder = new RuntimeContextBuilder();
-    const roleSpec: SpecDocument = {
-      path: "role.md",
+    const modeSpec: SpecDocument = {
+      path: "mode.md",
       frontmatter: {},
       id: "core.thinking-partner",
-      docType: "core.role",
-      body: "Role body",
+      docType: "core.mode",
+      body: "Mode body",
     };
     const documentTypeSpec: SpecDocument = {
       path: "decision.md",
@@ -35,7 +35,7 @@ describe("Step 2 file editing", () => {
 
     const prompt = builder.buildSystemPrompt({
       baseInstruction: "Base",
-      roleSpec,
+      modeSpec,
       currentDocument: {
         path: "/tmp/docs/decision.md",
         relativePath: "docs/decision.md",

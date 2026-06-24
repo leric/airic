@@ -1,6 +1,6 @@
 ---
 id: core.thinking-partner
-doc_type: core.role
+doc_type: core.mode
 title: Thinking Partner
 ---
 

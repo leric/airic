@@ -3,19 +3,19 @@ import { RuntimeContextBuilder } from "../src/application/services/runtime-conte
 import type { SpecDocument } from "../src/domain/spec/spec-document.js";
 
 describe("RuntimeContextBuilder", () => {
-  it("combines base instruction, role spec, and current document", () => {
+  it("combines base instruction, mode spec, and current document", () => {
     const builder = new RuntimeContextBuilder();
-    const roleSpec: SpecDocument = {
-      path: "role.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.role" },
+    const modeSpec: SpecDocument = {
+      path: "mode.md",
+      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
       id: "core.thinking-partner",
-      docType: "core.role",
-      body: "# Role\n\nAsk thoughtful questions.",
+      docType: "core.mode",
+      body: "# Mode\n\nAsk thoughtful questions.",
     };
 
     const prompt = builder.buildSystemPrompt({
       baseInstruction: "You are Airic.",
-      roleSpec,
+      modeSpec,
       currentDocument: {
         relativePath: "notes/example.md",
         content: "# Example",
@@ -27,23 +27,24 @@ describe("RuntimeContextBuilder", () => {
     expect(prompt).toContain("Ask thoughtful questions.");
     expect(prompt).toContain("notes/example.md");
     expect(prompt).toContain("# Example");
+    expect(prompt).toContain("## Active Mode");
   });
 
   it("refreshes system prompt via buildAgentContext", async () => {
     const builder = new RuntimeContextBuilder();
-    const roleSpec: SpecDocument = {
-      path: "role.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.role" },
+    const modeSpec: SpecDocument = {
+      path: "mode.md",
+      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
       id: "core.thinking-partner",
-      docType: "core.role",
-      body: "Role body",
+      docType: "core.mode",
+      body: "Mode body",
     };
 
     let currentPath = "a.md";
     const context = builder.buildAgentContext(
       {
         baseInstruction: "Base",
-        roleSpec,
+        modeSpec,
         currentDocument: {
           relativePath: currentPath,
           content: "A",

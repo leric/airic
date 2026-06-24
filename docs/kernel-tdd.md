@@ -77,7 +77,7 @@ Documents in `.airic` are used to control the behavior of Airic Agent, or data g
   config.yml
 
   specs/
-    roles/
+    modes/
       thinking-partner.md
 
     document-types/
@@ -92,7 +92,7 @@ Documents in `.airic` are used to control the behavior of Airic Agent, or data g
   packs/
     core/
       base-instruction.md
-      roles/
+      modes/
       document-types/
       processes/
     founder/
@@ -137,7 +137,7 @@ Although pack ecosystem is not a v0.1 feature, the structure of the core pack mu
 Core pack responsibilities:
 
 * Provide `base-instruction.md` (kernel base instruction).
-* Provide minimal default role, document-type, and process specs.
+* Provide minimal default mode, document-type, and process specs.
 * Serve as the default source of behavior if user does not override.
 
 In v0.1:
@@ -157,21 +157,21 @@ Spec files are not strict YAML DSLs. Their main content is prose written for the
 There are three core spec document types:
 
 ```text
-core.role
+core.mode
 core.document-type
 core.process
 ```
 
-### Role Spec
+### Mode Spec
 
-A role spec describes the agent’s behavior mode and thinking style.
+A mode spec describes the agent’s thinking style and behavior for a session.
 
 Example:
 
 ```markdown
 ---
 id: core.thinking-partner
-doc_type: core.role
+doc_type: core.mode
 title: Thinking Partner
 ---
 
@@ -299,20 +299,20 @@ A session is a normal chat session with optional state.
 ```text
 Session
   id
-  role_id
+  mode_id
   current_document: optional
   active_process: optional
   chat_history
   edit_log_refs
 ```
 
-### `role_id`
+### `mode_id`
 
-Required. Every session must have an active role that defines the agent’s behavior.
+Required. Every session must have an active mode that defines the agent’s thinking style and behavior.
 
-The role is selected at startup, either from config or by the user, and can be manually switched during the session.
+The mode is selected at startup, either from config or by the user, and can be switched during the session via ACP.
 
-Airic always loads the corresponding role spec for the active role.
+Airic always loads the corresponding mode spec for the active mode.
 
 ### `current_document`
 
@@ -336,7 +336,7 @@ Processes are not only started via CLI. They can also be activated by the agent 
 
 ```text
 kernel base instruction (from core pack)
-+ active role spec
++ active mode spec
 + chat history
 ```
 
@@ -346,7 +346,7 @@ kernel base instruction (from core pack)
 
 ```text
 kernel base instruction
-+ active role spec
++ active mode spec
 + current file content
 + chat history
 ```
@@ -357,7 +357,7 @@ kernel base instruction
 
 ```text
 kernel base instruction
-+ active role spec
++ active mode spec
 + current document content
 + resolved document-type spec
 + active process spec, if any
@@ -370,7 +370,7 @@ kernel base instruction
 
 ```text
 kernel base instruction
-+ active role spec
++ active mode spec
 + active process spec
 + chat history
 ```
@@ -381,7 +381,7 @@ kernel base instruction
 
 ```text
 kernel base instruction
-+ active role spec
++ active mode spec
 + current document content
 + resolved document-type spec, if any
 + active process spec
@@ -395,7 +395,7 @@ kernel base instruction
 ```text
 Always load:
 - kernel base instruction (from core pack)
-- active role spec
+- active mode spec
 - active process spec, if any
 - current document or file, if any
 - current document-type spec, if declared
@@ -453,7 +453,7 @@ For each user message:
 ```text
 1. Load session state.
 
-2. Resolve active role spec.
+2. Resolve active mode spec.
 
 3. Resolve active process spec, if active_process exists.
 
@@ -486,7 +486,7 @@ For each user message:
 Minimal `.airic/config.yml`:
 
 ```yaml
-default_role: core.thinking-partner
+default_mode: core.thinking-partner
 
 llm:
   provider: openai
@@ -498,7 +498,7 @@ packs:
   core: .airic/packs/core
 
 spec_paths:
-  roles: .airic/specs/roles
+  modes: .airic/specs/modes
   document_types: .airic/specs/document-types
   processes: .airic/specs/processes
 
@@ -535,7 +535,7 @@ UI (ACP client):
 
 ## 14. MVP Acceptance Criteria
 
-1. Chat with role spec.
+1. Chat with mode spec.
 2. File editing.
 3. doc_type-based editing.
 4. Core pack base instruction loading.

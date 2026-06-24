@@ -192,7 +192,7 @@ Behavior:
 
    * path from root to `baseTurnId`
    * digression path from `startTurnId` to current dig turn
-   * active role/process/document context
+   * active mode/process/document context
 
 The command expresses:
 
@@ -278,7 +278,7 @@ For each normal user message, build context from:
 
 ```text
 kernel instruction
-+ active role spec, if any
++ active mode spec, if any
 + active process spec, if any
 + current document/file context, if any
 + active cursor path

@@ -4,7 +4,7 @@ import type { CurrentDocumentContext } from "./current-document-context.js";
 
 export type RuntimeContextInput = {
   baseInstruction: string;
-  roleSpec: SpecDocument;
+  modeSpec: SpecDocument;
   currentDocument?: CurrentDocumentContext;
 };
 
@@ -14,8 +14,8 @@ export class RuntimeContextBuilder {
     const systemParts = [
       input.baseInstruction.trim(),
       "",
-      "## Active Role",
-      input.roleSpec.body.trim(),
+      "## Active Mode",
+      input.modeSpec.body.trim(),
     ];
 
     if (input.currentDocument) {

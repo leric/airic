@@ -1,4 +1,4 @@
-default_role: core.thinking-partner
+default_mode: core.thinking-partner
 
 llm:
   provider: openai-compatible
@@ -10,7 +10,7 @@ packs:
   core: .airic/packs/core
 
 spec_paths:
-  roles: .airic/specs/roles
+  modes: .airic/specs/modes
   document_types: .airic/specs/document-types
   processes: .airic/specs/processes
 

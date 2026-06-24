@@ -12,7 +12,7 @@ export class YamlConfigLoader implements ConfigLoaderPort {
     const parsed = loadYaml(raw) as Record<string, unknown>;
 
     return {
-      defaultRole: readString(parsed.default_role, "core.thinking-partner"),
+      defaultMode: readString(parsed.default_mode, "core.thinking-partner"),
       llm: {
         provider: readString(readObject(parsed.llm).provider, "openai"),
         model: readString(readObject(parsed.llm).model, "gpt-4o"),
@@ -26,9 +26,9 @@ export class YamlConfigLoader implements ConfigLoaderPort {
         core: readString(readObject(parsed.packs).core, ".airic/packs/core"),
       },
       specPaths: {
-        roles: readString(
-          readObject(parsed.spec_paths).roles,
-          ".airic/specs/roles",
+        modes: readString(
+          readObject(parsed.spec_paths).modes,
+          ".airic/specs/modes",
         ),
         documentTypes: readString(
           readObject(parsed.spec_paths).document_types,

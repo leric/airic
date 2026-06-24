@@ -13,7 +13,7 @@ export type ThinkingLevel =
   | "xhigh";
 
 export type AiricConfig = {
-  defaultRole: string;
+  defaultMode: string;
   llm: {
     provider: LlmProvider;
     model: string;
@@ -27,7 +27,7 @@ export type AiricConfig = {
     core: string;
   };
   specPaths: {
-    roles: string;
+    modes: string;
     documentTypes: string;
     processes: string;
   };

@@ -76,8 +76,8 @@ export class SendMessageUseCase {
     userMessage: string,
     input: SendMessageInput,
   ): Promise<string> {
-    const roleId = session.roleId ?? this.deps.runtime.config.defaultRole;
-    const roleSpec = this.deps.runtime.specRegistry.require(roleId);
+    const modeId = session.modeId ?? this.deps.runtime.config.defaultMode;
+    const modeSpec = this.deps.runtime.specRegistry.require(modeId);
 
     const refreshCurrentDocument = async () =>
       loadCurrentDocumentContext(
@@ -90,7 +90,7 @@ export class SendMessageUseCase {
     const systemContext = this.contextBuilder.buildAgentContext(
       {
         baseInstruction: this.deps.runtime.baseInstruction,
-        roleSpec,
+        modeSpec,
         currentDocument,
       },
       refreshCurrentDocument,
@@ -118,7 +118,7 @@ export class SendMessageUseCase {
     });
 
     session.updatedAt = new Date().toISOString();
-    session.roleId = roleId;
+    session.modeId = modeId;
 
     await this.deps.sessionStore.save(session);
 

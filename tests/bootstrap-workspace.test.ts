@@ -8,25 +8,25 @@ import { YamlConfigLoader } from "../src/infrastructure/config/yaml-config-loade
 import { WorkspaceRuntimeLoader } from "../src/application/services/workspace-runtime-loader.js";
 
 describe("bootstrapWorkspace", () => {
-  it("creates .airic structure and loads role spec", async () => {
+  it("creates .airic structure and loads mode spec", async () => {
     const fs = new NodeFileSystem();
     const workspaceRoot = await mkdtemp(join(tmpdir(), "airic-test-"));
 
     await bootstrapWorkspace(fs, workspaceRoot);
 
     const configPath = join(workspaceRoot, ".airic", "config.yml");
-    const roleSpecPath = join(
+    const modeSpecPath = join(
       workspaceRoot,
       ".airic",
       "specs",
-      "roles",
+      "modes",
       "thinking-partner.md",
     );
 
     await expect(readFile(configPath, "utf8")).resolves.toContain(
       "core.thinking-partner",
     );
-    await expect(readFile(roleSpecPath, "utf8")).resolves.toContain(
+    await expect(readFile(modeSpecPath, "utf8")).resolves.toContain(
       "Thinking Partner",
     );
 
@@ -34,30 +34,30 @@ describe("bootstrapWorkspace", () => {
     const runtimeLoader = new WorkspaceRuntimeLoader(fs, configLoader);
     const runtime = await runtimeLoader.load(workspaceRoot);
 
-    const role = runtime.specRegistry.require("core.thinking-partner");
-    expect(role.docType).toBe("core.role");
+    const mode = runtime.specRegistry.require("core.thinking-partner");
+    expect(mode.docType).toBe("core.mode");
     expect(runtime.baseInstruction).toContain("Airic Kernel");
   });
 
-  it("does not overwrite existing role specs", async () => {
+  it("does not overwrite existing mode specs", async () => {
     const fs = new NodeFileSystem();
     const workspaceRoot = await mkdtemp(join(tmpdir(), "airic-test-"));
 
     await bootstrapWorkspace(fs, workspaceRoot);
 
-    const roleSpecPath = join(
+    const modeSpecPath = join(
       workspaceRoot,
       ".airic",
       "specs",
-      "roles",
+      "modes",
       "thinking-partner.md",
     );
 
-    await writeFile(roleSpecPath, "CUSTOM ROLE SPEC", "utf8");
+    await writeFile(modeSpecPath, "CUSTOM MODE SPEC", "utf8");
     await bootstrapWorkspace(fs, workspaceRoot);
 
-    await expect(readFile(roleSpecPath, "utf8")).resolves.toBe(
-      "CUSTOM ROLE SPEC",
+    await expect(readFile(modeSpecPath, "utf8")).resolves.toBe(
+      "CUSTOM MODE SPEC",
     );
   });
 });

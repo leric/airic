@@ -84,12 +84,12 @@ function createUseCase(
   sessionStore: MemorySessionStore,
   agentRuntime: FakeAgentRuntime,
 ) {
-  const roleSpec: SpecDocument = {
-    path: "role.md",
+  const modeSpec: SpecDocument = {
+    path: "mode.md",
     frontmatter: {},
     id: "core.thinking-partner",
-    docType: "core.role",
-    body: "Role",
+    docType: "core.mode",
+    body: "Mode",
   };
 
   return new SendMessageUseCase({
@@ -98,7 +98,7 @@ function createUseCase(
     runtime: {
       workspaceRoot: "/tmp/workspace",
       config: {
-        defaultRole: "core.thinking-partner",
+        defaultMode: "core.thinking-partner",
         llm: {
           provider: "openai",
           model: "gpt-4o",
@@ -108,7 +108,7 @@ function createUseCase(
         },
         packs: { core: ".airic/packs/core" },
         specPaths: {
-          roles: ".airic/specs/roles",
+          modes: ".airic/specs/modes",
           documentTypes: ".airic/specs/document-types",
           processes: ".airic/specs/processes",
         },
@@ -117,7 +117,7 @@ function createUseCase(
       },
       baseInstruction: "Base",
       specRegistry: {
-        require: () => roleSpec,
+        require: () => modeSpec,
       } as never,
     },
     fs: {} as never,

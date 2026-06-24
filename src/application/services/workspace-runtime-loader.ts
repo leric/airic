@@ -34,8 +34,8 @@ export class WorkspaceRuntimeLoader {
       await documentLoader.loadMarkdownDocument(baseInstructionPath);
 
     const specRegistry = new SpecRegistry();
-    const roleSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, config.specPaths.roles),
+    const modeSpecs = await documentLoader.loadSpecDocuments(
+      resolveWorkspacePath(workspaceRoot, config.specPaths.modes),
     );
     const documentTypeSpecs = await documentLoader.loadSpecDocuments(
       resolveWorkspacePath(workspaceRoot, config.specPaths.documentTypes),
@@ -44,7 +44,7 @@ export class WorkspaceRuntimeLoader {
       resolveWorkspacePath(workspaceRoot, config.specPaths.processes),
     );
 
-    specRegistry.registerAll(roleSpecs);
+    specRegistry.registerAll(modeSpecs);
     specRegistry.registerAll(documentTypeSpecs);
     specRegistry.registerAll(processSpecs);
 

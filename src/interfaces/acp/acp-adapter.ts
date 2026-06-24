@@ -5,7 +5,9 @@ import { YamlConfigLoader } from "../../infrastructure/config/yaml-config-loader
 import { SessionStoreFactory } from "../../infrastructure/store/json-session-store.js";
 import { bootstrapWorkspace } from "../../application/use-cases/bootstrap-workspace.js";
 import { SendMessageUseCase } from "../../application/use-cases/send-message.js";
+import { SelectModeUseCase } from "../../application/use-cases/select-mode.js";
 import { WorkspaceRuntimeLoader } from "../../application/services/workspace-runtime-loader.js";
+import { listAvailableModes } from "../../application/services/mode-catalog.js";
 import { createSession } from "../../domain/session/session.js";
 import { extractUserMessage, fileUriToPath } from "./acp-message-mapper.js";
 import { EditStore } from "../../application/services/edit-store.js";
@@ -67,8 +69,22 @@ export class AcpAdapter {
   }
 
   async setSessionMode(
-    _params: acp.SetSessionModeRequest,
+    params: acp.SetSessionModeRequest,
   ): Promise<acp.SetSessionModeResponse> {
+    const workspaceRoot = this.workspaceSessions.get(params.sessionId);
+    if (!workspaceRoot) {
+      throw new Error(`Workspace root not found for session ${params.sessionId}`);
+    }
+
+    const runtime = await this.runtimeLoader.load(workspaceRoot);
+    const sessionStore = this.sessionStoreFactory.forWorkspace(workspaceRoot);
+    const selectMode = new SelectModeUseCase({ sessionStore, runtime });
+
+    await selectMode.execute({
+      sessionId: params.sessionId,
+      modeId: params.modeId,
+    });
+
     return {};
   }
 
@@ -85,7 +101,7 @@ export class AcpAdapter {
     const session = createSession(
       sessionId,
       workspaceRoot,
-      runtime.config.defaultRole,
+      runtime.config.defaultMode,
     );
 
     await sessionStore.save(session);
@@ -93,7 +109,19 @@ export class AcpAdapter {
     this.sessions.set(sessionId, { pendingPrompt: null });
     this.workspaceSessions.set(sessionId, workspaceRoot);
 
-    return { sessionId };
+    const availableModes = listAvailableModes(runtime.specRegistry);
+
+    return {
+      sessionId,
+      modes: {
+        currentModeId: runtime.config.defaultMode,
+        availableModes: availableModes.map((mode) => ({
+          id: mode.id,
+          name: mode.name,
+          description: mode.description ?? null,
+        })),
+      },
+    };
   }
 
   async prompt(

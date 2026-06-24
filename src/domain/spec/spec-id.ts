@@ -1,4 +1,4 @@
-export type SpecDocType = "core.role" | "core.document-type" | "core.process";
+export type SpecDocType = "core.mode" | "core.document-type" | "core.process";
 
 export function parseSpecId(raw: unknown): string {
   if (typeof raw !== "string" || raw.trim().length === 0) {
@@ -9,7 +9,7 @@ export function parseSpecId(raw: unknown): string {
 
 export function parseSpecDocType(raw: unknown): SpecDocType {
   if (
-    raw === "core.role" ||
+    raw === "core.mode" ||
     raw === "core.document-type" ||
     raw === "core.process"
   ) {

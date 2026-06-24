@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { FileSystemPort } from "../ports/file-system-port.js";
 
-const DEFAULT_CONFIG = `default_role: core.thinking-partner
+const DEFAULT_CONFIG = `default_mode: core.thinking-partner
 
 llm:
   provider: openai
@@ -13,7 +13,7 @@ packs:
   core: .airic/packs/core
 
 spec_paths:
-  roles: .airic/specs/roles
+  modes: .airic/specs/modes
   document_types: .airic/specs/document-types
   processes: .airic/specs/processes
 
@@ -37,7 +37,7 @@ You are Airic, a markdown-configured agent running over a user-owned workspace.
 ## Core Rules
 
 - The user workspace belongs to the user. You only own \`.airic/\`.
-- Follow the active role spec for behavior and tone.
+- Follow the active mode spec for behavior and tone.
 - Be concise unless the user asks for depth.
 - Do not claim to have edited files unless a tool or confirmed edit actually ran.
 - Use read, ls, find, and grep to explore the workspace before editing.
@@ -47,7 +47,7 @@ You are Airic, a markdown-configured agent running over a user-owned workspace.
 
 const THINKING_PARTNER = `---
 id: core.thinking-partner
-doc_type: core.role
+doc_type: core.mode
 title: Thinking Partner
 ---
 
@@ -64,29 +64,29 @@ Your job is to help the user think clearly without taking over direction.
 - Preserve unresolved ideas when they may matter later.
 `;
 
-const ROLE_SPEC_DEFINITION = `---
-id: core.role
-doc_type: core.role
-title: Role Spec
+const MODE_SPEC_DEFINITION = `---
+id: core.mode
+doc_type: core.mode
+title: Mode Spec
 ---
 
-# Role Spec
+# Mode Spec
 
-A role spec defines the agent's behavior mode and thinking style for a session.
+A mode spec defines the agent's thinking style and behavior for a session.
 
-Every active session loads exactly one role spec. The role is referenced by its \`id\` (for example \`core.thinking-partner\`).
+Every active session loads exactly one mode spec. The mode is referenced by its \`id\` (for example \`core.thinking-partner\`).
 
 ## Frontmatter
 
-- \`id\`: unique role identifier
-- \`doc_type\`: must be \`core.role\`
+- \`id\`: unique mode identifier
+- \`doc_type\`: must be \`core.mode\`
 - \`title\`: human-readable name
 
 ## Body
 
 Describe how the agent should behave: tone, priorities, boundaries, and what it should avoid.
 
-Concrete role instances (such as thinking-partner) live under \`packs/core/roles/\` and are activated via \`.airic/specs/roles/\`.
+Concrete mode instances (such as thinking-partner) live under \`packs/core/modes/\` and are activated via \`.airic/specs/modes/\`.
 `;
 
 const DOCUMENT_TYPE_SPEC_DEFINITION = `---
@@ -206,10 +206,10 @@ type PackFile = {
 
 const CORE_PACK_FILES: PackFile[] = [
   { relativePath: "base-instruction.md", content: BASE_INSTRUCTION },
-  { relativePath: "roles/thinking-partner.md", content: THINKING_PARTNER },
+  { relativePath: "modes/thinking-partner.md", content: THINKING_PARTNER },
   {
-    relativePath: "document-types/role.md",
-    content: ROLE_SPEC_DEFINITION,
+    relativePath: "document-types/mode.md",
+    content: MODE_SPEC_DEFINITION,
   },
   {
     relativePath: "document-types/document-type.md",
@@ -259,7 +259,7 @@ export async function bootstrapWorkspace(
 
   await ensureDir(airicRoot);
   await ensureDir(join(airicRoot, "packs", "core"));
-  await ensureDir(join(airicRoot, "specs", "roles"));
+  await ensureDir(join(airicRoot, "specs", "modes"));
   await ensureDir(join(airicRoot, "specs", "document-types"));
   await ensureDir(join(airicRoot, "specs", "processes"));
   await ensureDir(join(airicRoot, "sessions"));
@@ -292,8 +292,8 @@ export async function syncCorePackToSpecs(
   const airicRoot = join(workspaceRoot, ".airic");
   const mappings = [
     {
-      from: join(airicRoot, "packs", "core", "roles"),
-      to: join(airicRoot, "specs", "roles"),
+      from: join(airicRoot, "packs", "core", "modes"),
+      to: join(airicRoot, "specs", "modes"),
     },
     {
       from: join(airicRoot, "packs", "core", "processes"),

@@ -63,9 +63,9 @@ Open the Agent panel and start a new Airic thread in your workspace.
 
 ### Behavior configuration
 
-Active role specs live in `.airic/specs/roles/`. The default role is `core.thinking-partner` (see `.airic/config.yml`).
+Active mode specs live in `.airic/specs/modes/`. The default mode is `core.thinking-partner` (see `.airic/config.yml`).
 
-Edit `.airic/specs/roles/thinking-partner.md` and start a new session to change agent behavior.
+Edit `.airic/specs/modes/thinking-partner.md` or switch mode via ACP during a session to change agent behavior.
 
 Base kernel instructions come from `.airic/packs/core/base-instruction.md`.
 
@@ -74,12 +74,12 @@ Core pack layout:
 ```text
 .airic/packs/core/
   base-instruction.md
-  roles/              # concrete role instances (e.g. thinking-partner)
-  document-types/     # meta definitions: role, document-type, process spec kinds
+  modes/              # concrete mode instances (e.g. thinking-partner)
+  document-types/     # meta definitions: mode, document-type, process spec kinds
   processes/          # concrete process instances
 
 .airic/specs/
-  roles/              # active role specs (synced from pack)
+  modes/              # active mode specs (synced from pack)
   document-types/     # concrete document-type specs (e.g. decision, note, task)
   processes/          # active process specs (synced from pack)
 ```

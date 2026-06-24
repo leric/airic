@@ -21,6 +21,7 @@
 | Use case | Purpose | Location | Ports used | Key entities |
 |---|---|---|---|---|
 | Send message | Run one agent turn with tools; dispatch `/digin`, `/sumup`, `/tree` | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root) | Session, TurnNode |
+| Select mode | Switch session thinking mode via ACP `session/set_mode` | `use-cases/select-mode.ts` | SessionStorePort, WorkspaceRuntime (specRegistry) | Session |
 | Propose / apply edit | User-confirmed file mutation | `use-cases/file-editing.ts` | FileSystemPort, SessionStorePort | PendingEdit |
 | Bootstrap workspace | Initialize `.airic/` layout | `use-cases/bootstrap-workspace.ts` | FileSystemPort | — |
 | Open document | Set current document + doc_type | `use-cases/file-editing.ts` | FileSystemPort, SpecRegistry | Session |
@@ -67,7 +68,7 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 
 | Entity | Owns | Location |
 |---|---|---|
-| Session | workspace root, turn tree (cursor + dig stack), current document | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md) |
+| Session | workspace root, turn tree (cursor + dig stack), current document, active mode | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md) |
 | TurnNode | one user+assistant exchange in the session tree | `domain/session/turn-node.ts` |
 | PendingEdit | proposed mutation before user accept | `domain/tool/pending-edit.ts` |
 | AiricToolDefinition | tool metadata + execute + optional present | `domain/tool/tool.ts` |
@@ -81,7 +82,8 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 - New tool → `create*Tool()` factory + register in `createDefaultToolRegistry()`.
 - Wire runtime → `createKernelToolStack(deps)` at composition root only (`interfaces/acp/acp-adapter.ts`). Use cases must not import infrastructure factories.
 - Workspace path resolution → `domain/path/workspace-path.ts`.
-- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder`.
+- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + current document).
+- Available modes → `application/services/mode-catalog.ts` (`listAvailableModes` from spec registry `core.mode` docs). ACP `session/new` returns `modes`; `session/set_mode` → `SelectModeUseCase`.
 - `/sumup` prompt format → `application/services/session-sumup-builder.ts` (spec: `docs/session-tree.md` §10–11).
 - Session tree field defaults → `domain/session/ensure-session-tree.ts` (in-memory) and `JsonSessionStore.get()` (persistence).
 - Dependency direction: domain ← application ← infrastructure; interfaces/acp calls application.
