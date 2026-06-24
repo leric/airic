@@ -8,11 +8,15 @@ Airic can read workspace files, create files, propose reviewable edits, and load
 
 ### Tools available to the agent
 
-- `list_files(path)`
-- `read_file(path)`
-- `create_file(path, content)`
-- `propose_edit(path, content)` — user must accept before write
-- `search_text(query, path?)`
+Airic exposes these workspace tools to the model:
+
+- `read(path, offset?, limit?)`
+- `ls(path?)`
+- `find(pattern, path?, limit?)`
+- `grep(pattern, path?, glob?, ignoreCase?, literal?, context?, limit?)`
+- `edit(path, edits[])` — exact oldText/newText replacement; user must accept before write
+- `write(path, content)` — create or overwrite files; user must accept before write
+- `bash(command, timeout?)`
 
 Edits are logged to `.airic/logs/edits.log` after acceptance.
 

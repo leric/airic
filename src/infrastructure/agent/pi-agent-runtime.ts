@@ -11,7 +11,10 @@ import type {
   AgentTurnInput,
   AgentTurnResult,
 } from "../../application/ports/agent-runtime-port.js";
+import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import type { KernelToolDefinition } from "../../application/services/kernel-tool-registry.js";
+import { formatToolResultText } from "../tools/common/tool-result-format.js";
+import { mapToolEndEvent } from "../../interfaces/acp/acp-tool-event-mapper.js";
 import { PiModelResolver } from "./pi-model-resolver.js";
 import { extractAssistantText, fromPiMessages, toPiMessages } from "./pi-transcript-mapper.js";
 
@@ -131,7 +134,7 @@ function createPiTool(
     description: definition.description,
     parameters,
     executionMode: definition.sequential ? "sequential" : undefined,
-    execute: async (toolCallId, params, signal) => {
+    execute: async (toolCallId, params, signal, onUpdate) => {
       const handler = input.tools.handler(definition.name);
       if (!handler) {
         throw new Error(`Unknown tool: ${definition.name}`);
@@ -142,12 +145,41 @@ function createPiTool(
         toolCallId,
         permissionGate: input.permissionGate,
         signal,
+        onUpdate: onUpdate
+          ? (update) =>
+              onUpdate({
+                content: update.content.map((part) =>
+                  part.type === "text"
+                    ? { type: "text" as const, text: part.text }
+                    : { type: "text" as const, text: formatToolResultText({ content: [part] }) },
+                ),
+                details: update.details,
+              })
+          : undefined,
       });
 
-      return {
-        content: [{ type: "text", text: result }],
-        details: { result },
-      };
+      return mapAiricResultToPi(result);
+    },
+  };
+}
+
+function mapAiricResultToPi(result: AiricToolResult) {
+  return {
+    content: result.content.map((part) => {
+      if (part.type === "text") {
+        return { type: "text" as const, text: part.text };
+      }
+      if (part.type === "diff") {
+        return {
+          type: "text" as const,
+          text: `[diff: ${part.path}]`,
+        };
+      }
+      return { type: "text" as const, text: `[terminal: ${part.terminalId}]` };
+    }),
+    details: {
+      ...result.details,
+      _airicResult: result,
     },
   };
 }
@@ -169,6 +201,8 @@ function jsonSchemaToTypebox(schema: Record<string, unknown>) {
       shape[key] = Type.Boolean({ description });
     } else if (property.type === "number") {
       shape[key] = Type.Number({ description });
+    } else if (property.type === "array") {
+      shape[key] = Type.Array(Type.Any(), { description });
     } else {
       shape[key] = Type.String({ description });
     }
@@ -207,14 +241,13 @@ async function mapPiEvent(
   }
 
   if (event.type === "tool_execution_end") {
-    const text = extractToolResultText(event.result);
-    await input.onEvent({
-      type: "tool_call_end",
-      toolCallId: event.toolCallId,
-      status: event.isError ? "failed" : "completed",
-      content: text,
-      rawOutput: event.isError ? { error: text } : { result: text },
-    });
+    const result = reconstructAiricResult(event.result);
+    const endEvent = mapToolEndEvent(
+      event.toolCallId,
+      result,
+      event.isError,
+    );
+    await input.onEvent(endEvent);
   }
 }
 
@@ -226,19 +259,32 @@ function isLlmMessage(message: { role: string }): message is Message {
   );
 }
 
-function extractToolResultText(result: unknown): string {
+function reconstructAiricResult(result: unknown): AiricToolResult {
   if (!result || typeof result !== "object") {
-    return "";
+    return { content: [{ type: "text", text: "" }] };
   }
 
-  const content = (result as { content?: Array<{ type: string; text?: string }> })
-    .content;
-  if (!Array.isArray(content)) {
-    return "";
+  const details = (result as {
+    details?: Record<string, unknown> & { _airicResult?: AiricToolResult };
+  }).details;
+  if (details?._airicResult) {
+    const { _airicResult, ...rest } = details;
+    return {
+      content: _airicResult.content,
+      details: rest,
+    };
   }
 
-  return content
-    .filter((part) => part.type === "text" && typeof part.text === "string")
-    .map((part) => part.text as string)
-    .join("");
+  const content = (result as { content?: Array<{ type: string; text?: string }> }).content;
+  if (Array.isArray(content)) {
+    const textParts = content
+      .filter((part) => part.type === "text" && typeof part.text === "string")
+      .map((part) => ({ type: "text" as const, text: part.text as string }));
+
+    if (textParts.length > 0) {
+      return { content: textParts, details };
+    }
+  }
+
+  return { content: [{ type: "text", text: "" }], details };
 }

@@ -1,7 +1,36 @@
 import type { Session } from "../../domain/session/session.js";
 import { KERNEL_TOOL_NAMES } from "../../domain/tool/tool-names.js";
+import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import type { EditPermissionGate } from "../ports/agent-runtime-port.js";
-import type { FileToolExecutor } from "./file-tool-executor.js";
+import type { AiricToolExecutor } from "./airic-tool-executor.js";
+import {
+  BASH_TOOL_DESCRIPTION,
+  BASH_TOOL_SCHEMA,
+} from "../../infrastructure/tools/shell/bash-tool.js";
+import {
+  EDIT_TOOL_DESCRIPTION,
+  EDIT_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/edit-tool.js";
+import {
+  FIND_TOOL_DESCRIPTION,
+  FIND_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/find-tool.js";
+import {
+  GREP_TOOL_DESCRIPTION,
+  GREP_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/grep-tool.js";
+import {
+  LS_TOOL_DESCRIPTION,
+  LS_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/ls-tool.js";
+import {
+  READ_TOOL_DESCRIPTION,
+  READ_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/read-tool.js";
+import {
+  WRITE_TOOL_DESCRIPTION,
+  WRITE_TOOL_SCHEMA,
+} from "../../infrastructure/tools/file/write-tool.js";
 
 export type KernelToolHandler = (
   session: Session,
@@ -10,20 +39,21 @@ export type KernelToolHandler = (
     toolCallId: string;
     permissionGate?: EditPermissionGate;
     signal?: AbortSignal;
+    onUpdate?: (update: AiricToolResult) => void;
   },
-) => Promise<string>;
+) => Promise<AiricToolResult>;
 
 export type KernelToolDefinition = {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
-  kind: "read" | "edit" | "search" | "other";
+  kind: "read" | "edit" | "search" | "execute" | "other";
   sequential?: boolean;
 };
 
 export type ToolCallPresentation = {
   title: string;
-  kind: "read" | "edit" | "search" | "other";
+  kind: "read" | "edit" | "search" | "execute" | "other";
   rawInput: Record<string, unknown>;
   locations?: Array<{ path: string }>;
 };
@@ -39,107 +69,53 @@ export interface KernelToolRegistryPort {
 
 const KERNEL_TOOL_DEFINITIONS: KernelToolDefinition[] = [
   {
-    name: KERNEL_TOOL_NAMES.LIST_FILES,
-    description:
-      "List files and directories at a path relative to the workspace root.",
+    name: KERNEL_TOOL_NAMES.READ,
+    description: READ_TOOL_DESCRIPTION,
     kind: "read",
-    parameters: {
-      type: "object",
-      properties: {
-        path: {
-          type: "string",
-          description:
-            "Directory path relative to workspace root. Use '.' for root.",
-        },
-      },
-      required: ["path"],
-    },
+    parameters: READ_TOOL_SCHEMA,
   },
   {
-    name: KERNEL_TOOL_NAMES.READ_FILE,
-    description: "Read the full text content of a file.",
+    name: KERNEL_TOOL_NAMES.LS,
+    description: LS_TOOL_DESCRIPTION,
     kind: "read",
-    parameters: {
-      type: "object",
-      properties: {
-        path: {
-          type: "string",
-          description: "File path relative to workspace root.",
-        },
-      },
-      required: ["path"],
-    },
+    parameters: LS_TOOL_SCHEMA,
   },
   {
-    name: KERNEL_TOOL_NAMES.CREATE_FILE,
-    description:
-      "Create a new file with the given content. Creates parent directories if needed.",
-    kind: "edit",
-    parameters: {
-      type: "object",
-      properties: {
-        path: {
-          type: "string",
-          description: "File path relative to workspace root.",
-        },
-        content: {
-          type: "string",
-          description: "Full file content to write.",
-        },
-        set_current_document: {
-          type: "boolean",
-          description:
-            "When true, set this file as the session current document after creation.",
-        },
-      },
-      required: ["path", "content"],
-    },
+    name: KERNEL_TOOL_NAMES.FIND,
+    description: FIND_TOOL_DESCRIPTION,
+    kind: "search",
+    parameters: FIND_TOOL_SCHEMA,
   },
   {
-    name: KERNEL_TOOL_NAMES.PROPOSE_EDIT,
-    description:
-      "Propose a file edit by providing the complete new file content. The user must accept before the file is written.",
+    name: KERNEL_TOOL_NAMES.GREP,
+    description: GREP_TOOL_DESCRIPTION,
+    kind: "search",
+    parameters: GREP_TOOL_SCHEMA,
+  },
+  {
+    name: KERNEL_TOOL_NAMES.EDIT,
+    description: EDIT_TOOL_DESCRIPTION,
     kind: "edit",
     sequential: true,
-    parameters: {
-      type: "object",
-      properties: {
-        path: {
-          type: "string",
-          description: "File path relative to workspace root.",
-        },
-        content: {
-          type: "string",
-          description: "Complete proposed file content after the edit.",
-        },
-      },
-      required: ["path", "content"],
-    },
+    parameters: EDIT_TOOL_SCHEMA,
   },
   {
-    name: KERNEL_TOOL_NAMES.SEARCH_TEXT,
-    description: "Search for text in workspace files.",
-    kind: "search",
-    parameters: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "Text to search for.",
-        },
-        path: {
-          type: "string",
-          description:
-            "Optional directory to search within, relative to workspace root.",
-        },
-      },
-      required: ["query"],
-    },
+    name: KERNEL_TOOL_NAMES.WRITE,
+    description: WRITE_TOOL_DESCRIPTION,
+    kind: "edit",
+    sequential: true,
+    parameters: WRITE_TOOL_SCHEMA,
+  },
+  {
+    name: KERNEL_TOOL_NAMES.BASH,
+    description: BASH_TOOL_DESCRIPTION,
+    kind: "execute",
+    parameters: BASH_TOOL_SCHEMA,
   },
 ];
 
 export class KernelToolRegistry implements KernelToolRegistryPort {
-  constructor(private readonly executor: FileToolExecutor) {}
+  constructor(private readonly executor: AiricToolExecutor) {}
 
   definitions(): KernelToolDefinition[] {
     return KERNEL_TOOL_DEFINITIONS;
@@ -151,17 +127,10 @@ export class KernelToolRegistry implements KernelToolRegistryPort {
     }
 
     return async (session, args, ctx) => {
-      return this.executor.execute(session, {
-        id: ctx.toolCallId,
-        name,
-        arguments: JSON.stringify(args),
-      }, {
-        onProposeEdit: async (edit, toolCallId) => {
-          if (!ctx.permissionGate) {
-            return "reject";
-          }
-          return ctx.permissionGate(edit, toolCallId);
-        },
+      return this.executor.execute(session, name, args, ctx, {
+        onProposeEdit: ctx.permissionGate
+          ? async (edit, toolCallId) => ctx.permissionGate!(edit, toolCallId)
+          : undefined,
       });
     };
   }
@@ -174,38 +143,52 @@ export class KernelToolRegistry implements KernelToolRegistryPort {
     const path = typeof args.path === "string" ? args.path : undefined;
 
     switch (name) {
-      case KERNEL_TOOL_NAMES.LIST_FILES:
-        return {
-          title: `List files in ${path ?? "."}`,
-          kind: "read",
-          rawInput: args,
-          locations: path ? [{ path }] : undefined,
-        };
-      case KERNEL_TOOL_NAMES.READ_FILE:
+      case KERNEL_TOOL_NAMES.READ:
         return {
           title: `Read ${path ?? "file"}`,
           kind: "read",
           rawInput: args,
           locations: path ? [{ path }] : undefined,
         };
-      case KERNEL_TOOL_NAMES.CREATE_FILE:
+      case KERNEL_TOOL_NAMES.LS:
         return {
-          title: `Create ${path ?? "file"}`,
-          kind: "edit",
+          title: `List ${path ?? "."}`,
+          kind: "read",
           rawInput: args,
           locations: path ? [{ path }] : undefined,
         };
-      case KERNEL_TOOL_NAMES.PROPOSE_EDIT:
+      case KERNEL_TOOL_NAMES.FIND:
+        return {
+          title: `Find ${String(args.pattern ?? "")}`,
+          kind: "search",
+          rawInput: args,
+          locations: path ? [{ path }] : undefined,
+        };
+      case KERNEL_TOOL_NAMES.GREP:
+        return {
+          title: `Grep /${String(args.pattern ?? "")}/`,
+          kind: "search",
+          rawInput: args,
+          locations: path ? [{ path }] : undefined,
+        };
+      case KERNEL_TOOL_NAMES.EDIT:
         return {
           title: `Edit ${path ?? "file"}`,
           kind: "edit",
           rawInput: args,
           locations: path ? [{ path }] : undefined,
         };
-      case KERNEL_TOOL_NAMES.SEARCH_TEXT:
+      case KERNEL_TOOL_NAMES.WRITE:
         return {
-          title: `Search for "${String(args.query ?? "")}"`,
-          kind: "search",
+          title: `Write ${path ?? "file"}`,
+          kind: "edit",
+          rawInput: args,
+          locations: path ? [{ path }] : undefined,
+        };
+      case KERNEL_TOOL_NAMES.BASH:
+        return {
+          title: `$ ${String(args.command ?? "")}`,
+          kind: "execute",
           rawInput: args,
         };
       default:

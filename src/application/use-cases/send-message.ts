@@ -8,7 +8,7 @@ import {
 } from "../services/runtime-context-builder.js";
 import type { WorkspaceRuntime } from "../services/workspace-runtime-loader.js";
 import { loadCurrentDocumentContext } from "../services/current-document-context.js";
-import { FileToolExecutor } from "../services/file-tool-executor.js";
+import { AiricToolExecutor } from "../services/airic-tool-executor.js";
 import {
   KernelToolRegistry,
 } from "../services/kernel-tool-registry.js";
@@ -48,7 +48,7 @@ export class SendMessageUseCase {
     this.kernelTools =
       deps.kernelTools ??
       new KernelToolRegistry(
-        new FileToolExecutor({
+        new AiricToolExecutor({
           fs: deps.fs,
           sessionStore: deps.sessionStore,
           diffService: new DiffService(),

@@ -40,17 +40,19 @@ export async function mapAgentRuntimeEventToAcp(
           sessionUpdate: "tool_call_update",
           toolCallId: event.toolCallId,
           status: event.status,
-          content: event.content
-            ? [
-                {
-                  type: "content",
-                  content: {
-                    type: "text",
-                    text: event.content,
+          content: event.acpContent?.length
+            ? event.acpContent
+            : event.content
+              ? [
+                  {
+                    type: "content",
+                    content: {
+                      type: "text",
+                      text: event.content,
+                    },
                   },
-                },
-              ]
-            : undefined,
+                ]
+              : undefined,
           rawOutput: event.rawOutput,
         },
       });

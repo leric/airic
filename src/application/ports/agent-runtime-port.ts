@@ -12,7 +12,7 @@ export type AgentRuntimeEvent =
       toolCallId: string;
       name: string;
       title: string;
-      kind: "read" | "edit" | "search" | "other";
+      kind: "read" | "edit" | "search" | "execute" | "other";
       rawInput: Record<string, unknown>;
       locations?: Array<{ path: string }>;
     }
@@ -21,6 +21,10 @@ export type AgentRuntimeEvent =
       toolCallId: string;
       status: "completed" | "failed";
       content?: string;
+      acpContent?: Array<
+        | { type: "content"; content: { type: "text"; text: string } }
+        | { type: "diff"; path: string; oldText: string | null; newText: string }
+      >;
       rawOutput?: Record<string, unknown>;
     }
   | { type: "run_end"; assistantText: string };
