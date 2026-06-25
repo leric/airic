@@ -6,6 +6,7 @@ import {
   KernelToolRegistry,
   type KernelToolRegistryPort,
 } from "../../application/services/kernel-tool-registry.js";
+import type { SpecRegistry } from "../../application/services/spec-registry.js";
 import { ToolExecutor } from "../../application/services/tool-executor.js";
 import type { EditStore } from "../../application/services/edit-store.js";
 import type { EditLog } from "../../application/services/edit-log.js";
@@ -15,6 +16,7 @@ import { createDefaultToolRegistry } from "./create-tool-registry.js";
 export type ToolRuntimeDeps = {
   fs: FileSystemPort;
   sessionStore: SessionStorePort;
+  specRegistry: SpecRegistry;
   diffService: DiffService;
   editStore: EditStore;
   editLog: EditLog;
@@ -22,7 +24,11 @@ export type ToolRuntimeDeps = {
 };
 
 export function createKernelToolStack(deps: ToolRuntimeDeps): KernelToolRegistryPort {
-  const registry = createDefaultToolRegistry({ fs: deps.fs });
+  const registry = createDefaultToolRegistry({
+    fs: deps.fs,
+    sessionStore: deps.sessionStore,
+    specRegistry: deps.specRegistry,
+  });
   const mutationCoordinator = new MutationCoordinator({
     fs: deps.fs,
     sessionStore: deps.sessionStore,

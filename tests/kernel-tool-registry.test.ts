@@ -5,10 +5,18 @@ import { AiricToolRegistry } from "../src/application/services/airic-tool-regist
 import { KERNEL_TOOL_NAMES, ALL_KERNEL_TOOL_NAMES } from "../src/domain/tool/tool-names.js";
 import { createDefaultToolRegistry } from "../src/infrastructure/tools/create-tool-registry.js";
 import { NodeFileSystem } from "../src/infrastructure/fs/node-file-system.js";
+import {
+  createNoopSessionStore,
+  createTestSpecRegistry,
+} from "./test-tool-deps.js";
 
 function createTestKernelRegistry() {
   const fs = new NodeFileSystem();
-  const registry = createDefaultToolRegistry({ fs });
+  const registry = createDefaultToolRegistry({
+    fs,
+    sessionStore: createNoopSessionStore(),
+    specRegistry: createTestSpecRegistry(),
+  });
   const executor = new ToolExecutor({
     registry,
     mutationCoordinator: {
@@ -55,7 +63,13 @@ describe("KernelToolRegistry", () => {
 
   it("AiricToolRegistry stores tools by name", () => {
     const fs = new NodeFileSystem();
-    const registry = new AiricToolRegistry(createDefaultToolRegistry({ fs }).list());
+    const registry = new AiricToolRegistry(
+      createDefaultToolRegistry({
+        fs,
+        sessionStore: createNoopSessionStore(),
+        specRegistry: createTestSpecRegistry(),
+      }).list(),
+    );
 
     expect(registry.get(KERNEL_TOOL_NAMES.READ)?.kind).toBe("read");
     expect(registry.get("unknown")).toBeUndefined();

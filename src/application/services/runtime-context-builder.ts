@@ -5,6 +5,8 @@ import type { CurrentDocumentContext } from "./current-document-context.js";
 export type RuntimeContextInput = {
   baseInstruction: string;
   modeSpec: SpecDocument;
+  processIndex: string;
+  activeProcessSpec?: SpecDocument;
   currentDocument?: CurrentDocumentContext;
 };
 
@@ -17,6 +19,20 @@ export class RuntimeContextBuilder {
       "## Active Mode",
       input.modeSpec.body.trim(),
     ];
+
+    if (input.activeProcessSpec) {
+      systemParts.push(
+        "",
+        "## Active Process",
+        input.activeProcessSpec.body.trim(),
+      );
+    } else if (input.processIndex.trim().length > 0) {
+      systemParts.push(
+        "",
+        "## Available Processes",
+        input.processIndex.trim(),
+      );
+    }
 
     if (input.currentDocument) {
       systemParts.push(

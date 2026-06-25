@@ -32,6 +32,7 @@ import { NodeFileSystem } from "../src/infrastructure/fs/node-file-system.js";
 import { JsonSessionStore } from "../src/infrastructure/store/json-session-store.js";
 import { createSession } from "../src/domain/session/session.js";
 import { KERNEL_TOOL_NAMES } from "../src/domain/tool/tool-names.js";
+import { createTestSpecRegistry } from "./test-tool-deps.js";
 
 describe("edit-diff", () => {
   it("applies a single replacement", () => {
@@ -261,7 +262,11 @@ describe("ToolExecutor policy", () => {
     await sessionStore.save(session);
 
     let policyChecked = false;
-    const registry = createDefaultToolRegistry({ fs });
+    const registry = createDefaultToolRegistry({
+      fs,
+      sessionStore,
+      specRegistry: createTestSpecRegistry(),
+    });
     const executor = new ToolExecutor({
       registry,
       mutationCoordinator: new MutationCoordinator({

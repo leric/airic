@@ -9,4 +9,7 @@ export function ensureSessionTree(session: Session): void {
   if (!session.digStack) {
     session.digStack = [];
   }
+  if (!session.processInstances) {
+    session.processInstances = {};
+  }
 }

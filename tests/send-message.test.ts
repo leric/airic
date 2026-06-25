@@ -118,6 +118,8 @@ function createUseCase(
       baseInstruction: "Base",
       specRegistry: {
         require: () => modeSpec,
+        get: () => undefined,
+        listByDocType: () => [],
       } as never,
     },
     fs: {} as never,

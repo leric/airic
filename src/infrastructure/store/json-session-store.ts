@@ -29,6 +29,9 @@ export class JsonSessionStore implements SessionStorePort {
     if (!session.digStack) {
       session.digStack = [];
     }
+    if (!session.processInstances) {
+      session.processInstances = {};
+    }
     return session;
   }
 

@@ -1,11 +1,28 @@
 import type { DigFrame, TurnNode } from "./turn-node.js";
 
+export type ProcessInstanceStatus = "active" | "completed" | "cancelled";
+
+export type ProcessInstance = {
+  id: string;
+  processId: string;
+  status: ProcessInstanceStatus;
+  startedBy: "user" | "agent";
+  startedAt: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  reason?: string;
+  inputSummary?: string;
+  outputSummary?: string;
+  state?: Record<string, unknown>;
+};
+
 export type Session = {
   id: string;
   workspaceRoot: string;
   modeId?: string;
   currentDocument?: string;
-  activeProcess?: string;
+  activeProcessInstanceId?: string;
+  processInstances: Record<string, ProcessInstance>;
 
   rootTurnId?: string;
   currentTurnId?: string;
@@ -26,6 +43,7 @@ export function createSession(
     id,
     workspaceRoot,
     modeId,
+    processInstances: {},
     turns: {},
     digStack: [],
     createdAt: now,

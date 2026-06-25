@@ -6,6 +6,21 @@ import type { WorkspaceRuntime } from "../services/workspace-runtime-loader.js";
 import { loadCurrentDocumentContext } from "../services/current-document-context.js";
 import type { KernelToolRegistryPort } from "../services/kernel-tool-registry.js";
 import {
+  buildProcessIndexText,
+  formatProcessListForUser,
+  listProcesses,
+} from "../services/process-catalog.js";
+import {
+  ProcessLifecycleError,
+  cancelProcess,
+  completeProcess,
+  formatProcessStatusForUser,
+  getActiveProcessInstance,
+  getProcessStatus,
+  mergeProcessState,
+  startProcess,
+} from "../services/process-lifecycle.js";
+import {
   buildSumupPrompt,
   buildSumupSystemPrompt,
 } from "../services/session-sumup-builder.js";
@@ -15,6 +30,8 @@ import type {
 } from "../ports/agent-runtime-port.js";
 import { ensureSessionTree } from "../../domain/session/ensure-session-tree.js";
 import { parseSessionCommand } from "../../domain/session/session-command.js";
+import type { SessionCommand } from "../../domain/session/session-command.js";
+import type { Session } from "../../domain/session/session.js";
 import {
   appendTurn,
   beginDig,
@@ -66,18 +83,21 @@ export class SendMessageUseCase {
         return this.handleSumUp(session, input);
       case "tree":
         return this.handleTree(session, input);
+      case "process":
+        return this.handleProcess(session, command, input);
       default:
         return this.handleMessage(session, input.userMessage, input);
     }
   }
 
   private async handleMessage(
-    session: Awaited<ReturnType<SessionStorePort["get"]>> & {},
+    session: Session,
     userMessage: string,
     input: SendMessageInput,
   ): Promise<string> {
     const modeId = session.modeId ?? this.deps.runtime.config.defaultMode;
     const modeSpec = this.deps.runtime.specRegistry.require(modeId);
+    const processContext = this.buildProcessContext(session);
 
     const refreshCurrentDocument = async () =>
       loadCurrentDocumentContext(
@@ -91,6 +111,8 @@ export class SendMessageUseCase {
       {
         baseInstruction: this.deps.runtime.baseInstruction,
         modeSpec,
+        processIndex: processContext.processIndex,
+        activeProcessSpec: processContext.activeProcessSpec,
         currentDocument,
       },
       refreshCurrentDocument,
@@ -111,6 +133,11 @@ export class SendMessageUseCase {
       onEvent: input.onEvent,
     });
 
+    const reloaded = await this.deps.sessionStore.get(input.sessionId);
+    if (reloaded) {
+      mergeProcessState(session, reloaded);
+    }
+
     appendTurn(session, {
       userMessage,
       assistantMessage: result.assistantText,
@@ -123,6 +150,103 @@ export class SendMessageUseCase {
     await this.deps.sessionStore.save(session);
 
     return result.assistantText;
+  }
+
+  private buildProcessContext(session: Session) {
+    const activeInstance = getActiveProcessInstance(session);
+    const processes = listProcesses(this.deps.runtime.specRegistry);
+
+    if (activeInstance) {
+      const activeProcessSpec = this.deps.runtime.specRegistry.get(
+        activeInstance.processId,
+      );
+      return {
+        processIndex: "",
+        activeProcessSpec,
+      };
+    }
+
+    return {
+      processIndex: buildProcessIndexText(processes),
+      activeProcessSpec: undefined,
+    };
+  }
+
+  private async handleProcess(
+    session: Session,
+    command: Extract<SessionCommand, { kind: "process" }>,
+    input: SendMessageInput,
+  ): Promise<string> {
+    let response: string;
+
+    try {
+      switch (command.action) {
+        case "list": {
+          const processes = listProcesses(this.deps.runtime.specRegistry);
+          response = formatProcessListForUser(processes);
+          break;
+        }
+        case "start": {
+          if (!command.processId) {
+            response = "Usage: /process start <process-id>";
+            break;
+          }
+          const { instance, spec } = startProcess(
+            session,
+            this.deps.runtime.specRegistry,
+            {
+              processId: command.processId,
+              startedBy: "user",
+              reason: "User requested process start.",
+            },
+          );
+          const title =
+            typeof spec.frontmatter.title === "string"
+              ? spec.frontmatter.title
+              : spec.id;
+          response = `Started process: ${instance.processId} (${title}).`;
+          break;
+        }
+        case "status": {
+          response = formatProcessStatusForUser(
+            getProcessStatus(session, this.deps.runtime.specRegistry),
+          );
+          break;
+        }
+        case "complete": {
+          const instance = completeProcess(
+            session,
+            this.deps.runtime.specRegistry,
+            {
+              outputSummary:
+                command.outputSummary ?? "Process completed by user.",
+            },
+          );
+          response = `Completed process: ${instance.processId}.`;
+          break;
+        }
+        case "cancel": {
+          const instance = cancelProcess(session, {
+            reason: command.reason ?? "User cancelled.",
+          });
+          response = `Cancelled process: ${instance.processId}.`;
+          break;
+        }
+      }
+    } catch (error) {
+      response =
+        error instanceof ProcessLifecycleError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Process command failed.";
+    }
+
+    session.updatedAt = new Date().toISOString();
+    await this.deps.sessionStore.save(session);
+    await this.emitDirectResponse(response, input.onEvent);
+
+    return response;
   }
 
   private async handleDigIn(

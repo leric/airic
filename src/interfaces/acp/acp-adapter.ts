@@ -153,6 +153,7 @@ export class AcpAdapter {
       const kernelTools = createKernelToolStack({
         fs: this.fs,
         sessionStore,
+        specRegistry: runtime.specRegistry,
         diffService: new DiffService(),
         editStore: this.editStore,
         editLog,

@@ -6,6 +6,11 @@ export const KERNEL_TOOL_NAMES = {
   EDIT: "edit",
   WRITE: "write",
   BASH: "bash",
+  PROCESS_START: "process.start",
+  PROCESS_COMPLETE: "process.complete",
+  PROCESS_CANCEL: "process.cancel",
+  PROCESS_STATUS: "process.status",
+  PROCESS_LIST: "process.list",
 } as const;
 
 export type KernelToolName =

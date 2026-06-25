@@ -29,6 +29,36 @@ describe("parseSessionCommand", () => {
   it("treats other input as normal messages", () => {
     expect(parseSessionCommand("hello")).toEqual({ kind: "message", text: "hello" });
   });
+
+  it("parses process commands", () => {
+    expect(parseSessionCommand("/process list")).toEqual({
+      kind: "process",
+      action: "list",
+    });
+    expect(parseSessionCommand("/process status")).toEqual({
+      kind: "process",
+      action: "status",
+    });
+    expect(parseSessionCommand("/process complete")).toEqual({
+      kind: "process",
+      action: "complete",
+    });
+    expect(parseSessionCommand("/process cancel no longer needed")).toEqual({
+      kind: "process",
+      action: "cancel",
+      reason: "no longer needed",
+    });
+    expect(parseSessionCommand("/process start core.task-decomposition")).toEqual({
+      kind: "process",
+      action: "start",
+      processId: "core.task-decomposition",
+    });
+    expect(parseSessionCommand("/process core.task-decomposition")).toEqual({
+      kind: "process",
+      action: "start",
+      processId: "core.task-decomposition",
+    });
+  });
 });
 
 describe("generateTurnTitle", () => {

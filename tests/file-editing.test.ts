@@ -36,6 +36,7 @@ describe("Step 2 file editing", () => {
     const prompt = builder.buildSystemPrompt({
       baseInstruction: "Base",
       modeSpec,
+      processIndex: "",
       currentDocument: {
         path: "/tmp/docs/decision.md",
         relativePath: "docs/decision.md",

@@ -2,6 +2,15 @@
 id: core.precedent-extraction
 doc_type: core.process
 title: Precedent Extraction
+summary: Extract reusable human judgment from a concrete case.
+triggers:
+  - user makes a judgment that may apply again
+  - repeated decision pattern appears
+  - an agent correction reveals a reusable rule
+  - review identifies a repeated failure mode
+outputs:
+  - core.precedent
+activation: suggested
 ---
 
 # Precedent Extraction
