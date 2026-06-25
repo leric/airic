@@ -135,6 +135,7 @@ export class SendMessageUseCase {
 
     const reloaded = await this.deps.sessionStore.get(input.sessionId);
     if (reloaded) {
+      // process.* tools load-mutate-save via sessionStore; merge before appendTurn save.
       mergeProcessState(session, reloaded);
     }
 

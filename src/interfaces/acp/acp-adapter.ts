@@ -8,8 +8,10 @@ import { SendMessageUseCase } from "../../application/use-cases/send-message.js"
 import { SelectModeUseCase } from "../../application/use-cases/select-mode.js";
 import { WorkspaceRuntimeLoader } from "../../application/services/workspace-runtime-loader.js";
 import { listAvailableModes } from "../../application/services/mode-catalog.js";
+import { listAvailableSlashCommands } from "../../application/services/command-catalog.js";
 import { createSession } from "../../domain/session/session.js";
 import { extractUserMessage, fileUriToPath } from "./acp-message-mapper.js";
+import { notifyAvailableCommands } from "./acp-command-catalog.js";
 import { EditStore } from "../../application/services/edit-store.js";
 import { EditLog } from "../../application/services/edit-log.js";
 import { OpenDocumentUseCase } from "../../application/use-cases/file-editing.js";
@@ -90,6 +92,7 @@ export class AcpAdapter {
 
   async newSession(
     params: acp.NewSessionRequest,
+    cx: acp.AgentContext,
   ): Promise<acp.NewSessionResponse> {
     const workspaceRoot = params.cwd;
     await bootstrapWorkspace(this.fs, workspaceRoot);
@@ -110,8 +113,9 @@ export class AcpAdapter {
     this.workspaceSessions.set(sessionId, workspaceRoot);
 
     const availableModes = listAvailableModes(runtime.specRegistry);
+    const availableCommands = listAvailableSlashCommands(runtime.specRegistry);
 
-    return {
+    const response: acp.NewSessionResponse = {
       sessionId,
       modes: {
         currentModeId: runtime.config.defaultMode,
@@ -122,6 +126,16 @@ export class AcpAdapter {
         })),
       },
     };
+
+    // ACP slash commands: send `available_commands_update` after session/new returns.
+    // Some clients (e.g. Zed) ignore session/update for an unknown sessionId.
+    queueMicrotask(() => {
+      void notifyAvailableCommands(sessionId, cx, availableCommands).catch(
+        () => {},
+      );
+    });
+
+    return response;
   }
 
   async prompt(
@@ -298,7 +312,7 @@ export function createAcpAgentApp(adapter: AcpAdapter): acp.AgentApp {
   return acp
     .agent({ name: "airic" })
     .onRequest("initialize", (ctx) => adapter.initialize(ctx.params))
-    .onRequest("session/new", (ctx) => adapter.newSession(ctx.params))
+    .onRequest("session/new", (ctx) => adapter.newSession(ctx.params, ctx.client))
     .onRequest("authenticate", (ctx) => adapter.authenticate(ctx.params))
     .onRequest("session/set_mode", (ctx) =>
       adapter.setSessionMode(ctx.params),

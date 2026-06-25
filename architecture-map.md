@@ -1,6 +1,6 @@
 # Architecture Map — Airic
 
-- Last updated: 2026-06-24
+- Last updated: 2026-06-25
 - Architectural decision owners: project maintainers (human review for new ports, use cases, owned concepts)
 
 ## Layer layout
@@ -20,7 +20,7 @@
 
 | Use case | Purpose | Location | Ports used | Key entities |
 |---|---|---|---|---|
-| Send message | Run one agent turn with tools; dispatch `/digin`, `/sumup`, `/tree` | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root) | Session, TurnNode |
+| Send message | Run one agent turn with tools; dispatch slash commands (`/digin`, `/sumup`, `/tree`, `/process …`) | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root) | Session, TurnNode, ProcessInstance |
 | Select mode | Switch session thinking mode via ACP `session/set_mode` | `use-cases/select-mode.ts` | SessionStorePort, WorkspaceRuntime (specRegistry) | Session |
 | Propose / apply edit | User-confirmed file mutation | `use-cases/file-editing.ts` | FileSystemPort, SessionStorePort | PendingEdit |
 | Bootstrap workspace | Initialize `.airic/` layout | `use-cases/bootstrap-workspace.ts` | FileSystemPort | — |
@@ -40,7 +40,7 @@
 
 ## Tool layer routing
 
-Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`.
+Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`, `process.start`, `process.complete`, `process.cancel`, `process.status`, `process.list`.
 
 | Concern | Owner | Location |
 |---|---|---|
@@ -49,7 +49,7 @@ Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`.
 | Generic execution + policy | application | `services/tool-executor.ts` |
 | Edit/write confirmation + apply | application | `services/mutation-coordinator.ts` |
 | Pi runtime bridge | application | `services/kernel-tool-registry.ts` |
-| Tool implementations | infrastructure | `src/infrastructure/tools/file/`, `shell/` |
+| Tool implementations | infrastructure | `src/infrastructure/tools/file/`, `shell/`, `process/` |
 | Composition root (registry + executor + Pi bridge) | infrastructure | `create-tool-registry.ts`, `create-tool-runtime.ts` |
 | ACP diff mapping | delivery | `interfaces/acp/acp-tool-event-mapper.ts` |
 
@@ -68,8 +68,9 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 
 | Entity | Owns | Location |
 |---|---|---|
-| Session | workspace root, turn tree (cursor + dig stack), current document, active mode | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md) |
+| Session | workspace root, turn tree (cursor + dig stack), current document, active mode, process instances | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md); process spec: [docs/process.md](docs/process.md) |
 | TurnNode | one user+assistant exchange in the session tree | `domain/session/turn-node.ts` |
+| ProcessInstance | one process workflow run (active / completed / cancelled) | `domain/session/session.ts` |
 | PendingEdit | proposed mutation before user accept | `domain/tool/pending-edit.ts` |
 | AiricToolDefinition | tool metadata + execute + optional present | `domain/tool/tool.ts` |
 | AiricToolResult | tool output shape (text, diff, terminal) | `domain/tool/tool-result.ts` |
@@ -82,8 +83,11 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 - New tool → `create*Tool()` factory + register in `createDefaultToolRegistry()`.
 - Wire runtime → `createKernelToolStack(deps)` at composition root only (`interfaces/acp/acp-adapter.ts`). Use cases must not import infrastructure factories.
 - Workspace path resolution → `domain/path/workspace-path.ts`.
-- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + current document).
+- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + process index or active process spec + current document).
 - Available modes → `application/services/mode-catalog.ts` (`listAvailableModes` from spec registry `core.mode` docs). ACP `session/new` returns `modes`; `session/set_mode` → `SelectModeUseCase`.
+- Process lifecycle → `application/services/process-lifecycle.ts` (start / complete / cancel / status on `Session`). Discovery/index → `application/services/process-catalog.ts`. User slash commands → `domain/session/session-command.ts` + `SendMessageUseCase.handleProcess`. Agent tools → `infrastructure/tools/process/`. Spec: [docs/process.md](docs/process.md).
+- Slash commands (kernel) → parse in `domain/session/session-command.ts`; advertise via `application/services/command-catalog.ts` + ACP `available_commands_update` in `interfaces/acp/acp-command-catalog.ts` after `session/new`. **Keep parse list and catalog list in sync** — test: `tests/command-catalog.test.ts`.
+- Process state after agent tools → `SendMessageUseCase.handleMessage` reloads session and calls `mergeProcessState` before final save (tools only receive `sessionId`, not in-memory session).
 - `/sumup` prompt format → `application/services/session-sumup-builder.ts` (spec: `docs/session-tree.md` §10–11).
 - Session tree field defaults → `domain/session/ensure-session-tree.ts` (in-memory) and `JsonSessionStore.get()` (persistence).
 - Dependency direction: domain ← application ← infrastructure; interfaces/acp calls application.
@@ -96,9 +100,11 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 | Pi content model vs AiricToolResult | `_airicResult` in `pi-agent-runtime` details | ACP diff lost if removed | Documented in code |
 | ToolExecutor → infrastructure | Executor has no tool imports; registry factory lives in infrastructure | Clean separation achieved | Resolved |
 | SendMessageUseCase → infrastructure | Use case previously defaulted `createKernelToolStack` internally | Layer bypass copied by future use cases | Resolved — `kernelTools` required; wired in ACP adapter |
+| Process tools → sessionStore | Tools load-mutate-save session; use case merges process state after turn | Dropped process changes if merge removed | Documented in `send-message.ts` + architecture map |
 
 ## Open ownership questions
 
 | Capability | Candidate owners | Decision needed |
 |---|---|---|
 | ACP diff for in-progress edit preview | ACP adapter vs tool executor | Deferred; v0.1 uses permission gate on completed diff only |
+| Canonical slash command registry | `session-command.ts` (parse) vs `command-catalog.ts` (advertise) | Deferred; cross-linked + sync test for now; consolidate if commands grow |

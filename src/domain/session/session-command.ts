@@ -1,3 +1,6 @@
+/** Parses user slash commands for SendMessageUseCase dispatch.
+ *  Keep command names in sync with `application/services/command-catalog.ts`
+ *  (ACP `available_commands_update` advertisement). Sync test: `tests/command-catalog.test.ts`. */
 export type ProcessCommandAction =
   | "list"
   | "start"
