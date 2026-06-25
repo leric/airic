@@ -77,17 +77,13 @@ export class PiModelResolver {
         name: `OpenAI-compatible (${baseUrl})`,
         baseUrl,
         auth: {
-          apiKey: config.apiKey
-            ? {
-                name: "OpenAI-compatible API key",
-                resolve: async () => ({
-                  auth: { apiKey: config.apiKey! },
-                }),
-              }
-            : {
-                name: `OpenAI-compatible (${baseUrl})`,
-                resolve: async () => ({ auth: {} }),
-              },
+          apiKey: {
+            name: "OpenAI-compatible API key",
+            resolve: async () => {
+              const apiKey = config.apiKey ?? process.env.OPENAI_API_KEY;
+              return apiKey ? { auth: { apiKey } } : { auth: {} };
+            },
+          },
         },
         models: [
           {

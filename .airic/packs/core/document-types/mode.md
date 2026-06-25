@@ -1,4 +1,3 @@
-```markdown
 ---
 id: core.mode
 doc_type: core.document-type

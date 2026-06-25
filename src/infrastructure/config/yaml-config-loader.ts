@@ -17,7 +17,10 @@ export class YamlConfigLoader implements ConfigLoaderPort {
         provider: readString(readObject(parsed.llm).provider, "openai"),
         model: readString(readObject(parsed.llm).model, "gpt-4o"),
         baseUrl: readOptionalString(readObject(parsed.llm).base_url),
-        apiKey: readOptionalString(readObject(parsed.llm).api_key),
+        apiKey: resolveApiKey(
+          readString(readObject(parsed.llm).provider, "openai"),
+          readOptionalString(readObject(parsed.llm).api_key),
+        ),
         temperature: readNumber(readObject(parsed.llm).temperature, 0.7),
         maxTokens: readNumber(readObject(parsed.llm).max_tokens, 4096),
         thinkingLevel: readThinkingLevel(readObject(parsed.llm).thinking_level),
@@ -65,6 +68,28 @@ function readString(value: unknown, fallback: string): string {
 
 function readOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+const PROVIDER_API_KEY_ENV: Record<string, string> = {
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  "openai-compatible": "OPENAI_API_KEY",
+};
+
+function resolveApiKey(
+  provider: string,
+  configApiKey: string | undefined,
+): string | undefined {
+  if (configApiKey) {
+    return configApiKey;
+  }
+  const envVar = PROVIDER_API_KEY_ENV[provider];
+  if (!envVar) {
+    return undefined;
+  }
+  const value = process.env[envVar];
+  return value && value.length > 0 ? value : undefined;
 }
 
 function readNumber(value: unknown, fallback: number): number {
