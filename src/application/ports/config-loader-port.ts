@@ -22,6 +22,12 @@ export type AiricConfig = {
     temperature: number;
     maxTokens: number;
     thinkingLevel: ThinkingLevel;
+    /**
+     * Maximum number of tool-call rounds the agent may take in a single turn
+     * before being force-terminated. Guards against runaway loops while leaving
+     * enough headroom for long, multi-step tasks.
+     */
+    maxToolRounds: number;
   };
   packs: {
     core: string;

@@ -18,8 +18,6 @@ import { mapToolEndEvent } from "../../interfaces/acp/acp-tool-event-mapper.js";
 import { PiModelResolver } from "./pi-model-resolver.js";
 import { extractAssistantText, fromPiMessages, toPiMessages } from "./pi-transcript-mapper.js";
 
-const MAX_TOOL_ROUNDS = 8;
-
 export class PiAgentRuntime implements AgentRuntimePort {
   private readonly activeAgents = new Map<string, Agent>();
   private readonly modelResolver: PiModelResolver;
@@ -51,6 +49,7 @@ export class PiAgentRuntime implements AgentRuntimePort {
       });
 
     let toolRoundCount = 0;
+    const maxToolRounds = input.llm.maxToolRounds;
 
     let agent!: Agent;
     agent = new Agent({
@@ -75,7 +74,7 @@ export class PiAgentRuntime implements AgentRuntimePort {
       toolExecution: "parallel",
       afterToolCall: async () => {
         toolRoundCount += 1;
-        if (toolRoundCount >= MAX_TOOL_ROUNDS) {
+        if (toolRoundCount >= maxToolRounds) {
           return { terminate: true };
         }
         return undefined;

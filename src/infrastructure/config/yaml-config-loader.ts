@@ -24,6 +24,10 @@ export class YamlConfigLoader implements ConfigLoaderPort {
         temperature: readNumber(readObject(parsed.llm).temperature, 0.7),
         maxTokens: readNumber(readObject(parsed.llm).max_tokens, 4096),
         thinkingLevel: readThinkingLevel(readObject(parsed.llm).thinking_level),
+        maxToolRounds: readPositiveInteger(
+          readObject(parsed.llm).max_tool_rounds,
+          100,
+        ),
       },
       packs: {
         core: readString(readObject(parsed.packs).core, ".airic/packs/core"),
@@ -80,6 +84,13 @@ function resolveApiKey(
 
 function readNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function readPositiveInteger(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 1) {
+    return Math.floor(value);
+  }
+  return fallback;
 }
 
 function readBoolean(value: unknown, fallback: boolean): boolean {

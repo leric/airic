@@ -83,6 +83,7 @@ function createUseCase(
           temperature: 0.7,
           maxTokens: 4096,
           thinkingLevel: "off",
+          maxToolRounds: 100,
         },
         packs: { core: ".airic/packs/core" },
         editing: { requireConfirmation: true },

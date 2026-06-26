@@ -10,6 +10,7 @@ describe("PiModelResolver", () => {
       temperature: 0.7,
       maxTokens: 4096,
       thinkingLevel: "off",
+      maxToolRounds: 100,
     });
 
     expect(model.provider).toBe("openai");
@@ -25,6 +26,7 @@ describe("PiModelResolver", () => {
         temperature: 0.7,
         maxTokens: 4096,
         thinkingLevel: "off",
+        maxToolRounds: 100,
       }),
     ).toThrow(/Unsupported LLM provider/);
   });
@@ -39,6 +41,7 @@ describe("PiModelResolver", () => {
       temperature: 0.7,
       maxTokens: 4096,
       thinkingLevel: "off",
+      maxToolRounds: 100,
     });
 
     expect(model.provider).toContain("openai-compatible");
@@ -56,6 +59,7 @@ describe("PiModelResolver", () => {
       temperature: 0.5,
       maxTokens: 8192,
       thinkingLevel: "off",
+      maxToolRounds: 100,
     });
 
     expect(model.id).toBe("qwen2.5:7b");
@@ -72,6 +76,7 @@ describe("PiModelResolver", () => {
         temperature: 0.7,
         maxTokens: 4096,
         thinkingLevel: "off",
+        maxToolRounds: 100,
       }),
     ).toThrow(/base_url/);
   });
