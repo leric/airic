@@ -9,15 +9,25 @@
   },
   "files": [
     "dist",
-    ".airic"
+    ".airic/config.default.yml",
+    ".airic/packs/core"
   ],
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run build && npm test",
+    "pack:check": "npm pack --dry-run",
     "start": "node dist/main.js",
     "dev": "tsx src/main.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leric/airic.git"
+  },
+  "homepage": "https://github.com/leric/airic#readme",
+  "bugs": "https://github.com/leric/airic/issues",
   "keywords": [
     "agent",
     "acp",

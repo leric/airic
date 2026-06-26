@@ -20,26 +20,45 @@ Connect from [Zed](https://zed.dev/) or any ACP-compatible client to chat, explo
 
 **Prerequisites:** Node.js 20+
 
+### Install
+
+**One-line install** (macOS / Linux):
+
 ```bash
-git clone https://github.com/your-org/airic.git   # or your fork
-cd airic
-npm install
-npm run build
+curl -fsSL https://raw.githubusercontent.com/leric/airic/main/scripts/install.sh | bash
 ```
+
+**Global install** (recommended for daily use with Zed):
+
+```bash
+npm install -g airic
+airic --version
+```
+
+**Zero-install** (always runs the latest published version):
+
+```bash
+npx -y airic
+```
+
+Pin a version when installing globally: `AIRIC_VERSION=0.1.0 curl ... | bash` or `npm install -g airic@0.1.0`.
 
 Open a workspace that should use Airic. On first connection, Airic bootstraps `.airic/` from the bundled core pack (config, directories, and default specs).
 
-Set an API key for your chosen provider (see [Configuration](#configuration)), then start the server:
+Set an API key for your chosen provider (see [Configuration](#configuration)), then connect from your ACP client (see [Connect from Zed](#connect-from-zed)).
+
+### Develop from source
 
 ```bash
-export OPENAI_API_KEY=sk-...
-npm run dev
+git clone https://github.com/leric/airic.git
+cd airic
+npm install
+npm run dev    # runs src/main.ts via tsx
 ```
 
-For local development without rebuilding:
-
 ```bash
-npm run dev    # runs src/main.ts via tsx
+npm test
+npm run build
 ```
 
 ## Connect from Zed
@@ -50,8 +69,7 @@ Add an agent server entry in Zed settings (`~/.config/zed/settings.json`):
 {
   "agent_servers": {
     "Airic": {
-      "command": "npx",
-      "args": ["tsx", "/absolute/path/to/airic/src/main.ts"],
+      "command": "airic",
       "env": {
         "OPENAI_API_KEY": "your-key"
       }
@@ -60,10 +78,27 @@ Add an agent server entry in Zed settings (`~/.config/zed/settings.json`):
 }
 ```
 
-After building, you can point at the compiled entry instead:
+If you prefer not to install globally, use `npx`:
 
 ```json
-"args": ["node", "/absolute/path/to/airic/dist/main.js"]
+{
+  "agent_servers": {
+    "Airic": {
+      "command": "npx",
+      "args": ["-y", "airic"],
+      "env": {
+        "OPENAI_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+When developing from a clone, you can point at the compiled entry:
+
+```json
+"command": "node",
+"args": ["/absolute/path/to/airic/dist/main.js"]
 ```
 
 Open the Agent panel, start a new thread in your workspace, and pick the **Airic** server.
@@ -121,7 +156,7 @@ The bundled **core pack** defines how Airic thinks and acts:
 
 - **Default mode:** `core.thinking-partner` — a thinking-first posture; switch modes via ACP `session/set_mode`.
 - **Add or edit specs** in your workspace copy under `.airic/packs/core/` (bootstrap only seeds missing files; your edits are preserved).
-- **Processes** are discovered from `processes/*.md` and driven with `/process` or agent tools.
+- **Processes** are discovered from `process/*.md` and driven with `/process` or agent tools.
 
 See [docs/kernel-tdd.md](docs/kernel-tdd.md) for the full kernel design and [architecture-map.md](architecture-map.md) for layer boundaries and extension points.
 
@@ -178,12 +213,7 @@ src/infrastructure/ LLM (Pi), filesystem, config, tools, store
 src/interfaces/acp/ ACP adapter (not part of the kernel)
 ```
 
-**Stack:** TypeScript (ESM), Node 20+, Pi agent core for the LLM loop, Vitest for tests.
-
-```bash
-npm test
-npm run build
-```
+**Stack:** TypeScript (ESM), Node 20+, Pi agent core for the LLM loop, Vitest for tests. Published on npm as [`airic`](https://www.npmjs.com/package/airic).
 
 ## License
 

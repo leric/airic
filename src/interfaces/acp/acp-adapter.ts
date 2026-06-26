@@ -21,6 +21,7 @@ import { PiModelResolver } from "../../infrastructure/agent/pi-model-resolver.js
 import { DiffService } from "../../infrastructure/diff/diff-service.js";
 import { createKernelToolStack } from "../../infrastructure/tools/create-tool-runtime.js";
 import { mapAgentRuntimeEventToAcp } from "./acp-event-mapper.js";
+import { replaySessionHistory } from "./acp-session-replay.js";
 
 type SessionState = {
   pendingPrompt: AbortController | null;
@@ -52,7 +53,7 @@ export class AcpAdapter {
     return {
       protocolVersion: acp.PROTOCOL_VERSION,
       agentCapabilities: {
-        loadSession: false,
+        loadSession: true,
         promptCapabilities: {
           embeddedContext: true,
         },
@@ -109,8 +110,7 @@ export class AcpAdapter {
 
     await sessionStore.save(session);
 
-    this.sessions.set(sessionId, { pendingPrompt: null });
-    this.workspaceSessions.set(sessionId, workspaceRoot);
+    this.registerSession(sessionId, workspaceRoot);
 
     const availableModes = listAvailableModes(runtime.specRegistry);
     const availableCommands = listAvailableSlashCommands(runtime.specRegistry);
@@ -136,6 +136,52 @@ export class AcpAdapter {
     });
 
     return response;
+  }
+
+  async loadSession(
+    params: acp.LoadSessionRequest,
+    cx: acp.AgentContext,
+  ): Promise<acp.LoadSessionResponse> {
+    const workspaceRoot = params.cwd;
+    await bootstrapWorkspace(this.fs, workspaceRoot);
+
+    const sessionStore = this.sessionStoreFactory.forWorkspace(workspaceRoot);
+    const session = await sessionStore.get(params.sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${params.sessionId}`);
+    }
+
+    if (session.workspaceRoot !== workspaceRoot) {
+      throw new Error(
+        `Session ${params.sessionId} belongs to ${session.workspaceRoot}, not ${workspaceRoot}`,
+      );
+    }
+
+    this.registerSession(params.sessionId, workspaceRoot);
+
+    await replaySessionHistory(params.sessionId, session, cx);
+
+    const runtime = await this.runtimeLoader.load(workspaceRoot);
+    const availableModes = listAvailableModes(runtime.specRegistry);
+    const availableCommands = listAvailableSlashCommands(runtime.specRegistry);
+    const currentModeId = session.modeId ?? runtime.config.defaultMode;
+
+    queueMicrotask(() => {
+      void notifyAvailableCommands(params.sessionId, cx, availableCommands).catch(
+        () => {},
+      );
+    });
+
+    return {
+      modes: {
+        currentModeId,
+        availableModes: availableModes.map((mode) => ({
+          id: mode.id,
+          name: mode.name,
+          description: mode.description ?? null,
+        })),
+      },
+    };
   }
 
   async prompt(
@@ -306,6 +352,11 @@ export class AcpAdapter {
 
     return response.outcome.optionId === "allow" ? "allow" : "reject";
   }
+
+  private registerSession(sessionId: string, workspaceRoot: string): void {
+    this.sessions.set(sessionId, { pendingPrompt: null });
+    this.workspaceSessions.set(sessionId, workspaceRoot);
+  }
 }
 
 export function createAcpAgentApp(adapter: AcpAdapter): acp.AgentApp {
@@ -313,6 +364,7 @@ export function createAcpAgentApp(adapter: AcpAdapter): acp.AgentApp {
     .agent({ name: "airic" })
     .onRequest("initialize", (ctx) => adapter.initialize(ctx.params))
     .onRequest("session/new", (ctx) => adapter.newSession(ctx.params, ctx.client))
+    .onRequest("session/load", (ctx) => adapter.loadSession(ctx.params, ctx.client))
     .onRequest("authenticate", (ctx) => adapter.authenticate(ctx.params))
     .onRequest("session/set_mode", (ctx) =>
       adapter.setSessionMode(ctx.params),
