@@ -26,11 +26,11 @@ describe("Step 2 file editing", () => {
       body: "Mode body",
     };
     const documentTypeSpec: SpecDocument = {
-      path: "decision.md",
+      path: "task.md",
       frontmatter: {},
-      id: "core.decision",
+      id: "core.task",
       docType: "core.document-type",
-      body: "Decision standards",
+      body: "Task standards",
     };
 
     const prompt = builder.buildSystemPrompt({
@@ -38,16 +38,16 @@ describe("Step 2 file editing", () => {
       modeSpec,
       processIndex: "",
       currentDocument: {
-        path: "/tmp/docs/decision.md",
-        relativePath: "docs/decision.md",
-        content: "---\ndoc_type: core.decision\n---\n# Decision",
-        docType: "core.decision",
+        path: "/tmp/docs/task.md",
+        relativePath: "docs/task.md",
+        content: "---\ndoc_type: core.task\n---\n# Task",
+        docType: "core.task",
         documentTypeSpec,
       },
     });
 
-    expect(prompt).toContain("Decision standards");
-    expect(prompt).toContain("doc_type: core.decision");
+    expect(prompt).toContain("Task standards");
+    expect(prompt).toContain("doc_type: core.task");
   });
 
   it("proposes and applies an edit with audit log", async () => {
@@ -100,11 +100,11 @@ describe("Step 2 file editing", () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), "airic-open-"));
     await bootstrapWorkspace(fs, workspaceRoot);
 
-    const docPath = join(workspaceRoot, "docs", "decisions", "sample.md");
-    await mkdir(join(workspaceRoot, "docs", "decisions"), { recursive: true });
+    const docPath = join(workspaceRoot, "docs", "tasks", "sample.md");
+    await mkdir(join(workspaceRoot, "docs", "tasks"), { recursive: true });
     await writeFile(
       docPath,
-      "---\ndoc_type: core.decision\ntitle: Sample\n---\n# Sample\n",
+      "---\ndoc_type: core.task\ntitle: Sample\n---\n# Sample\n",
       "utf8",
     );
 
@@ -124,13 +124,13 @@ describe("Step 2 file editing", () => {
 
     const result = await openDocument.execute(
       "s1",
-      "docs/decisions/sample.md",
+      "docs/tasks/sample.md",
     );
 
-    expect(result.docType).toBe("core.decision");
-    expect(result.documentTypeSpec?.id).toBe("core.decision");
+    expect(result.docType).toBe("core.task");
+    expect(result.documentTypeSpec?.id).toBe("core.task");
 
     const saved = await sessionStore.get("s1");
-    expect(saved?.currentDocument).toContain("docs/decisions/sample.md");
+    expect(saved?.currentDocument).toContain("docs/tasks/sample.md");
   });
 });

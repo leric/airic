@@ -30,8 +30,6 @@ describe("listAvailableSlashCommands", () => {
     const commands = listAvailableSlashCommands(registry);
 
     expect(commands.map((command) => command.name)).toEqual([
-      "digin",
-      "sumup",
       "tree",
       "process",
     ]);
@@ -58,26 +56,26 @@ describe("toAcpAvailableCommands", () => {
   it("maps kernel commands to ACP available command shape", () => {
     const acpCommands = toAcpAvailableCommands([
       {
-        name: "sumup",
-        description: "Summarize the active dig-in.",
+        name: "tree",
+        description: "Show the current session turn tree.",
       },
       {
-        name: "digin",
-        description: "Start a dig-in.",
-        inputHint: "optional topic",
+        name: "process",
+        description: "Manage Airic process workflows.",
+        inputHint: "list | start <process-id>",
       },
     ]);
 
     expect(acpCommands).toEqual([
       {
-        name: "sumup",
-        description: "Summarize the active dig-in.",
+        name: "tree",
+        description: "Show the current session turn tree.",
         input: null,
       },
       {
-        name: "digin",
-        description: "Start a dig-in.",
-        input: { hint: "optional topic" },
+        name: "process",
+        description: "Manage Airic process workflows.",
+        input: { hint: "list | start <process-id>" },
       },
     ]);
   });

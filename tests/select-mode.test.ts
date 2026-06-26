@@ -44,10 +44,6 @@ function createRuntime(specRegistry: SpecRegistry): WorkspaceRuntime {
       cache: { enabled: true },
     },
     baseInstruction: "Base",
-    prompts: {
-      sumupSystem: "Summarize the dig-in.",
-      sumupUser: "Resume point: {{resumePoint}}\nTopic: {{topic}}",
-    },
     specRegistry,
   };
 }

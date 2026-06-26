@@ -17,15 +17,6 @@ export function listAvailableSlashCommands(
 
   return [
     {
-      name: "digin",
-      description: "Start a dig-in on a detail from the current turn.",
-      inputHint: "optional topic",
-    },
-    {
-      name: "sumup",
-      description: "Summarize the active dig-in and return to the main thread.",
-    },
-    {
       name: "tree",
       description: "Show the current session turn tree.",
     },

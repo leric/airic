@@ -1,6 +1,6 @@
 import type { TranscriptMessage } from "../agent/transcript.js";
 
-export type TurnKind = "normal" | "returnSummary";
+export type TurnKind = "normal";
 
 export type TurnNode = {
   id: string;
@@ -17,16 +17,6 @@ export type TurnNode = {
 
   kind: TurnKind;
   createdAt: string;
-};
-
-export type DigFrame = {
-  baseTurnId: string;
-  topic?: string;
-
-  startTurnId?: string;
-  currentDigTurnId?: string;
-
-  startedAt: string;
 };
 
 const MAX_TITLE_LENGTH = 80;

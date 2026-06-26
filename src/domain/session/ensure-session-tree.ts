@@ -6,9 +6,6 @@ export function ensureSessionTree(session: Session): void {
   if (!session.turns) {
     session.turns = {};
   }
-  if (!session.digStack) {
-    session.digStack = [];
-  }
   if (!session.processInstances) {
     session.processInstances = {};
   }

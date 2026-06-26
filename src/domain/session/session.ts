@@ -1,4 +1,4 @@
-import type { DigFrame, TurnNode } from "./turn-node.js";
+import type { TurnNode } from "./turn-node.js";
 
 export type ProcessInstanceStatus = "active" | "completed" | "cancelled";
 
@@ -27,7 +27,6 @@ export type Session = {
   rootTurnId?: string;
   currentTurnId?: string;
   turns: Record<string, TurnNode>;
-  digStack: DigFrame[];
 
   createdAt: string;
   updatedAt: string;
@@ -45,7 +44,6 @@ export function createSession(
     modeId,
     processInstances: {},
     turns: {},
-    digStack: [],
     createdAt: now,
     updatedAt: now,
   };

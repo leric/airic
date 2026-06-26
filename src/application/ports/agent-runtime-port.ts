@@ -57,16 +57,7 @@ export type AgentTurnResult = {
   turnMessages: TranscriptMessage[];
 };
 
-export type AgentCompleteInput = {
-  llm: AiricConfig["llm"];
-  systemPrompt: string;
-  messages: TranscriptMessage[];
-  prompt: string;
-  signal?: AbortSignal;
-};
-
 export interface AgentRuntimePort {
   runTurn(input: AgentTurnInput): Promise<AgentTurnResult>;
-  complete(input: AgentCompleteInput): Promise<string>;
   abort(sessionId: string): void;
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { TranscriptMessage } from "../agent/transcript.js";
 import type { Session } from "./session.js";
-import { generateTurnTitle, type DigFrame, type TurnKind, type TurnNode } from "./turn-node.js";
+import { generateTurnTitle, type TurnKind, type TurnNode } from "./turn-node.js";
 
 export type AppendTurnInput = {
   userMessage: string;
@@ -36,38 +36,7 @@ export function appendTurn(session: Session, input: AppendTurnInput): TurnNode {
 
   session.currentTurnId = id;
 
-  const activeFrame = session.digStack[session.digStack.length - 1];
-  if (activeFrame) {
-    if (!activeFrame.startTurnId) {
-      activeFrame.startTurnId = id;
-    }
-    activeFrame.currentDigTurnId = id;
-  }
-
   return turn;
-}
-
-export function beginDig(session: Session, topic?: string): DigFrame | null {
-  if (!session.currentTurnId) {
-    return null;
-  }
-
-  const frame: DigFrame = {
-    baseTurnId: session.currentTurnId,
-    topic,
-    startedAt: new Date().toISOString(),
-  };
-
-  session.digStack.push(frame);
-  return frame;
-}
-
-export function popDigFrame(session: Session): DigFrame | undefined {
-  return session.digStack.pop();
-}
-
-export function activeDigFrame(session: Session): DigFrame | undefined {
-  return session.digStack[session.digStack.length - 1];
 }
 
 export function cursorPath(session: Session): TurnNode[] {
@@ -91,7 +60,7 @@ export function cursorPath(session: Session): TurnNode[] {
 }
 
 /** Active cursor path as user/assistant text pairs for model context.
- *  Excludes sibling branches, digression branches after `/sumup`, and per-turn `toolTrace`. */
+ *  Excludes sibling branches and per-turn `toolTrace`. */
 export function projectCursorPath(session: Session): TranscriptMessage[] {
   const now = new Date().toISOString();
   const messages: TranscriptMessage[] = [];
@@ -110,70 +79,6 @@ export function projectCursorPath(session: Session): TranscriptMessage[] {
   }
 
   return messages;
-}
-
-export function digressionPath(session: Session, frame: DigFrame): TurnNode[] {
-  if (!frame.startTurnId) {
-    return [];
-  }
-
-  const endId = frame.currentDigTurnId ?? frame.startTurnId;
-  const path: TurnNode[] = [];
-  let currentId: string | undefined = endId;
-
-  while (currentId) {
-    const node: TurnNode | undefined = session.turns[currentId];
-    if (!node) {
-      break;
-    }
-    path.unshift(node);
-    if (currentId === frame.startTurnId) {
-      break;
-    }
-    currentId = node.parentId;
-  }
-
-  return path;
-}
-
-export function projectDigressionPath(
-  session: Session,
-  frame: DigFrame,
-): TranscriptMessage[] {
-  const now = new Date().toISOString();
-  const messages: TranscriptMessage[] = [];
-
-  for (const turn of digressionPath(session, frame)) {
-    messages.push({
-      role: "user",
-      content: turn.userMessage,
-      timestamp: turn.createdAt ?? now,
-    });
-    messages.push({
-      role: "assistant",
-      content: turn.assistantMessage,
-      timestamp: turn.createdAt ?? now,
-    });
-  }
-
-  return messages;
-}
-
-export function createReturnSummaryTurn(
-  session: Session,
-  frame: DigFrame,
-  summaryText: string,
-): TurnNode {
-  const baseTurn = session.turns[frame.baseTurnId];
-  const resumeTitle = baseTurn?.title ?? "previous discussion";
-
-  return appendTurn(session, {
-    parentId: frame.baseTurnId,
-    userMessage: "/sumup",
-    assistantMessage: summaryText,
-    kind: "returnSummary",
-    title: `Return summary: ${resumeTitle}`,
-  });
 }
 
 export function renderTree(session: Session): string {

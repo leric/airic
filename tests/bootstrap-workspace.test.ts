@@ -50,8 +50,7 @@ describe("bootstrapWorkspace", () => {
     const mode = runtime.specRegistry.require("core.thinking-partner");
     expect(mode.docType).toBe("core.mode");
     expect(runtime.baseInstruction).toContain("thinking partner");
-    expect(runtime.prompts.sumupSystem).toContain("return summary");
-    expect(runtime.prompts.sumupUser).toContain("{{resumePoint}}");
+    expect(runtime.specRegistry.get("core.task")?.docType).toBe("core.document-type");
 
     const toolDocs = runtime.specRegistry.listByDocType("core.tool");
     expect(toolDocs.length).toBeGreaterThanOrEqual(12);

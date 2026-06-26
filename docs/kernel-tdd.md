@@ -17,8 +17,7 @@ The shipped kernel can:
 - Load core runtime instructions from a core pack.
 - Enter document-type-aware editing when the focused markdown file declares `doc_type` in
   frontmatter.
-- Store session history as a turn tree and expose stack-style `/digin` and `/sumup`
-  navigation to keep digressions out of the main reasoning context.
+- Store session history as a turn tree; model context follows the active cursor path only.
 - Discover and run markdown-defined processes with a full lifecycle (start / complete /
   cancel), driven by either user commands or agent tool calls.
 - Talk to multiple LLM providers (OpenAI, Anthropic, OpenRouter, or any OpenAI-compatible
@@ -94,9 +93,8 @@ src/
 
 ### 4.1 Domain (`src/domain/`)
 
-- `session/` — `Session`, `TurnNode`, `DigFrame`, turn-tree operations (`appendTurn`,
-  `beginDig`, `popDigFrame`, `cursorPath`, `projectCursorPath`, `projectDigressionPath`,
-  `createReturnSummaryTurn`, `renderTree`), `parseSessionCommand`, `ensureSessionTree`.
+- `session/` — `Session`, `TurnNode`, turn-tree operations (`appendTurn`, `cursorPath`,
+  `projectCursorPath`, `renderTree`), `parseSessionCommand`, `ensureSessionTree`.
 - `spec/` — `SpecDocument`, spec id / doc_type parsing (`core.mode`, `core.document-type`,
   `core.process`).
 - `tool/` — `AiricToolDefinition`, tool kinds, policy/confirmation predicates,
@@ -112,7 +110,7 @@ anti-pollution logic and spec/tool typing.
 **Ports** (`ports/`) define the boundaries the kernel depends on:
 
 - `FileSystemPort`, `SessionStorePort`, `ConfigLoaderPort`
-- `AgentRuntimePort` (`runTurn`, `complete`, `abort`)
+- `AgentRuntimePort` (`runTurn`, `abort`)
 - `ToolRegistryPort`, `ToolExecutorPort`, `ToolPolicyPort`
 
 **Use cases** (`use-cases/`):
@@ -125,10 +123,8 @@ anti-pollution logic and spec/tool typing.
 
 **Services** (`services/`):
 
-- `WorkspaceRuntimeLoader` → builds a `WorkspaceRuntime` (config, base instruction, kernel
-  prompt templates from `packs/core/prompts/`, `SpecRegistry`).
-- `session-sumup-builder` → renders the `/sumup` system + user prompts from the core-pack
-  templates, substituting `{{resumePoint}}`, `{{topic}}`, and `{{baseContext}}`.
+- `WorkspaceRuntimeLoader` → builds a `WorkspaceRuntime` (config, base instruction,
+  `SpecRegistry`).
 - `RuntimeContextBuilder` → assembles the system prompt (mode, process index/spec, current
   document + doc_type spec) with a refresh hook so the document context stays current across
   tool rounds.
@@ -140,7 +136,7 @@ anti-pollution logic and spec/tool typing.
   → policy checks, execution, and diff-confirmation routing; `MutationCoordinator` → the
   propose → confirm → apply → log flow.
 - Support services: `current-document-context`, `document-type-resolver`, `mode-catalog`,
-  `command-catalog`, `edit-store`, `edit-log`, `path-resolver`, `session-sumup-builder`.
+  `command-catalog`, `edit-store`, `edit-log`, `path-resolver`.
 
 ### 4.3 Infrastructure (`src/infrastructure/`)
 
@@ -181,12 +177,11 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
       document-types/       # spec-kind definitions (mode, document-type, process, tool) + precedent
       processes/            # concrete processes (precedent-extraction, task-decomposition,
                             #   session-reflection)
-      prompts/              # kernel prompt templates (sumup-system, sumup-user)
       tools/                # core.tool usage docs (one per system tool, always resident)
 
   specs/
     modes/                  # active mode specs (synced from pack)
-    document-types/         # concrete doc-types (decision, task, note)
+    document-types/         # concrete doc-types (task, precedent, …) synced from pack
     processes/              # active process specs (synced from pack)
 
   sessions/
@@ -202,13 +197,12 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
 
 On `session/new`, `bootstrapWorkspace` copies bundled content from the Airic package's
 `.airic/` directory (shipped with the repo or npm install) into the user workspace: `config.default.yml`
-→ `config.yml`, the full `packs/core/` tree, and default specs (`decision`, `task`, `note`).
-Existing files are never overwritten. Pack prose is edited only under `.airic/packs/core/` in
-the Airic repository — not duplicated in TypeScript.
-`syncCorePackToSpecs` then copies pack `modes/` and `processes/` into `specs/` (copy only when
-the destination does not already exist, so user edits are preserved). The base instruction,
-prompt templates, and tool usage docs are loaded directly from the pack; they are not copied
-into `specs/`.
+→ `config.yml`, the full `packs/core/` tree. Existing files are never overwritten. Pack prose
+is edited only under `.airic/packs/core/` in the Airic repository — not duplicated in
+TypeScript. `syncCorePackToSpecs` then copies pack `modes/`, `document-types/`, and
+`processes/` into `specs/` (copy only when the destination does not already exist, so user
+edits are preserved). The base instruction and tool usage docs are loaded directly from the
+pack; tool usage docs are not copied into `specs/`.
 
 ---
 
@@ -305,7 +299,6 @@ type Session = {
   rootTurnId?: string;
   currentTurnId?: string;
   turns: Record<string, TurnNode>;
-  digStack: DigFrame[];
 
   createdAt: string;
   updatedAt: string;
@@ -315,13 +308,12 @@ type Session = {
 ### 8.1 Turn tree
 
 Each `TurnNode` is one user message + one assistant response, with a stable `id`, a
-`parentId`, an auto-generated `title`, a `kind` (`normal` | `returnSummary`), and an optional
-`toolTrace` (the full message slice incl. tool calls/results, kept for replay/export but
-excluded from default model context).
+`parentId`, an auto-generated `title`, and an optional `toolTrace` (the full message slice
+incl. tool calls/results, kept for replay/export but excluded from default model context).
 
 `projectCursorPath(session)` walks `root → … → currentTurnId` and emits only user/assistant
-text pairs. This is the core anti-pollution mechanism: sibling branches, post-`/sumup`
-digression turns, and per-turn tool traces are not fed back into the model.
+text pairs. This is the core anti-pollution mechanism: sibling branches and per-turn tool
+traces are not fed back into the model.
 
 ### 8.2 Process instances
 
@@ -375,7 +367,7 @@ are injected. Full process bodies are loaded only while a process is active.
 For each prompt:
 
 1. Load session; ensure the turn-tree fields exist.
-2. Parse the message for a slash command (`/digin`, `/sumup`, `/tree`, `/process …`).
+2. Parse the message for a slash command (`/tree`, `/process …`).
 3. Command messages are handled directly (see §11 / §12) and stream a direct response.
 4. Otherwise (`handleMessage`):
    - Resolve the active mode spec.
@@ -401,29 +393,17 @@ prior messages to Pi format, and drives an `@earendil-works/pi-agent-core` `Agen
   `tool_call_end`, `run_end`.
 - `abort()` cancels the active agent for a session.
 
-`complete` is a lightweight, tool-free completion used by `/sumup` to generate the return
-summary.
-
 ---
 
-## 11. Session-Tree Navigation (`/digin`, `/sumup`, `/tree`)
+## 11. Session-Tree Navigation (`/tree`)
 
-The ACP surface exposes a simple stack-style workflow while the kernel keeps a full tree
-internally.
+The kernel stores session history as a turn tree (`parentId` links). The active cursor
+(`currentTurnId`) defines which branch is live for model context via `projectCursorPath()`.
 
-- `/digin [topic]` — records the current cursor as a dig base and pushes a `DigFrame`. The
-  next normal turns attach as a digression branch under that base.
-- `/sumup` — projects the digression path, asks the LLM (`complete`) for a structured return
-  summary, creates a `returnSummary` turn under the dig base, sets the cursor to it, and pops
-  the frame. After `/sumup`, future context follows `root → … → baseTurn → returnSummary`,
-  excluding the raw digression turns.
 - `/tree` — debug rendering of the internal turn tree with the current cursor marked.
 
-The return-summary prompt enforces a fixed structure (Returned to / Before dig-in / Dig-in
-summary / Brought back / Continuing). Both the system and user prompts are markdown templates
-in the core pack (`packs/core/prompts/sumup-system.md`, `sumup-user.md`); the user template
-carries `{{resumePoint}}`, `{{topic}}`, and `{{baseContext}}` placeholders that
-`session-sumup-builder` fills at runtime, so prompt wording is editable without code changes.
+Thought navigation beyond linear append (branching, folding, summarizing side threads) is
+deliberately not prescribed yet; the tree data model is retained for future experimentation.
 
 ---
 
@@ -588,7 +568,6 @@ read, edited, or extended without touching code:
 - `core.process` — repeatable workflows with lifecycle
 - `core.document-type` — quality bar for user documents
 - `core.tool` — usage methodology for each system tool
-- `prompts/*.md` — kernel-owned prompt templates (e.g. `/sumup`)
 
 A scenario pack layers new behavior on top: it can introduce new modes, processes, document
 types, and cross-tool creative usage as ordinary prose. The kernel loads and assembles these;
@@ -604,8 +583,8 @@ stays in code. This includes:
   contract: adding a `RuntimeContextInput` field requires a code change here.
 - Tool **callable contracts** — name, JSON schema, one-line `description`, policy/confirmation
   flags. These must stay coupled to the implementation.
-- Command replies and UI text (`"Started process: …"`, `"Digging into: …"`, process index
-  formatting). These are mechanism outputs, not behavior strategy.
+- Command replies and UI text (`"Started process: …"`, process index formatting). These are
+  mechanism outputs, not behavior strategy.
 
 This code is **transparent and readable** — `buildSystemPrompt` is one short function, the tool
 contracts are plain objects — so anyone can understand "how the kernel assembles a prompt" by
@@ -660,8 +639,8 @@ unrestricted dev task) so permission prompts do not block startup.
   declaration.
 - **Core pack provides base instruction** and default specs; user edits are preserved on sync.
 - **Reviewable edits** — mutating file tools propose a diff and require confirmation, then log.
-- **Anti-pollution history** — model context follows the cursor path; digressions and tool
-  traces are excluded by default.
+- **Anti-pollution history** — model context follows the cursor path; sibling branches and
+  tool traces are excluded by default.
 - **Layered processes** — a process refines, never replaces, the active mode; only one is
   active at a time.
 - **Replaceable boundaries** — ACP, LLM, filesystem, and session storage sit behind ports.
@@ -677,7 +656,7 @@ runtime context into agent behavior, and serves it to editors over ACP.
 ACP chat + streaming
 + reviewable, audited file tools + bash
 + markdown modes / document-types / processes
-+ turn-tree history with /digin and /sumup
++ turn-tree session history
 + kernel-managed process lifecycle
 + multi-provider LLM access
 ```

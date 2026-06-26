@@ -2,12 +2,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FileSystemPort } from "../ports/file-system-port.js";
 
-const DEFAULT_SPEC_RELATIVE_PATHS = [
-  "document-types/decision.md",
-  "document-types/task.md",
-  "document-types/note.md",
-] as const;
-
 /** Bundled `.airic/` directory shipped with the Airic package (repo root or npm install root). */
 export function resolveBundledAiricRoot(): string {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
@@ -51,15 +45,6 @@ export async function bootstrapWorkspace(
     createdPaths,
   );
 
-  for (const relativePath of DEFAULT_SPEC_RELATIVE_PATHS) {
-    await seedFileIfMissing(
-      fs,
-      join(bundledAiricRoot, "specs", relativePath),
-      join(airicRoot, "specs", relativePath),
-      createdPaths,
-    );
-  }
-
   await syncCorePackToSpecs(fs, workspaceRoot);
 
   return { workspaceRoot, airicRoot, createdPaths };
@@ -74,6 +59,10 @@ export async function syncCorePackToSpecs(
     {
       from: join(airicRoot, "packs", "core", "modes"),
       to: join(airicRoot, "specs", "modes"),
+    },
+    {
+      from: join(airicRoot, "packs", "core", "document-types"),
+      to: join(airicRoot, "specs", "document-types"),
     },
     {
       from: join(airicRoot, "packs", "core", "processes"),

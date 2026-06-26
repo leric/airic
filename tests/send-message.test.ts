@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type {
-  AgentCompleteInput,
   AgentRuntimePort,
   AgentTurnInput,
   AgentTurnResult,
@@ -9,13 +8,11 @@ import { SendMessageUseCase } from "../src/application/use-cases/send-message.js
 import type { KernelToolRegistryPort } from "../src/application/services/kernel-tool-registry.js";
 import { RuntimeContextBuilder } from "../src/application/services/runtime-context-builder.js";
 import { createSession } from "../src/domain/session/session.js";
-import { projectCursorPath } from "../src/domain/session/turn-tree.js";
 import type { SessionStorePort } from "../src/application/ports/session-store-port.js";
 import type { SpecDocument } from "../src/domain/spec/spec-document.js";
 
 class FakeAgentRuntime implements AgentRuntimePort {
   abortCalls: string[] = [];
-  completeCalls = 0;
 
   async runTurn(input: AgentTurnInput): Promise<AgentTurnResult> {
     await input.onEvent({ type: "text_delta", text: "Hello" });
@@ -38,25 +35,6 @@ class FakeAgentRuntime implements AgentRuntimePort {
       assistantText: "Hello",
       turnMessages,
     };
-  }
-
-  async complete(input: AgentCompleteInput): Promise<string> {
-    this.completeCalls += 1;
-    return [
-      "Returned to: Main topic",
-      "",
-      "Before dig-in:",
-      "We were discussing the main topic.",
-      "",
-      "Dig-in summary:",
-      "Found a detail.",
-      "",
-      "Brought back:",
-      "Use command-based navigation.",
-      "",
-      "Continuing:",
-      "Resume main design.",
-    ].join("\n");
   }
 
   abort(sessionId: string): void {
@@ -116,11 +94,6 @@ function createUseCase(
         cache: { enabled: true },
       },
       baseInstruction: "Base",
-      prompts: {
-        sumupSystem: "Summarize the dig-in.",
-        sumupUser:
-          "Resume point: {{resumePoint}}\nTopic: {{topic}}\n{{baseContext}}",
-      },
       specRegistry: {
         require: () => modeSpec,
         get: () => undefined,
@@ -165,29 +138,5 @@ describe("SendMessageUseCase", () => {
     const turn = saved?.currentTurnId ? saved.turns[saved.currentTurnId] : undefined;
     expect(turn?.userMessage).toBe("Hi");
     expect(turn?.assistantMessage).toBe("Hello");
-  });
-
-  it("handles digin and sumup without keeping raw digression in cursor path", async () => {
-    const sessionStore = new MemorySessionStore();
-    const agentRuntime = new FakeAgentRuntime();
-    const session = createSession("s1", "/tmp/workspace", "core.thinking-partner");
-    await sessionStore.save(session);
-    const useCase = createUseCase(sessionStore, agentRuntime);
-    const onEvent = async () => {};
-
-    await useCase.execute({ sessionId: "s1", userMessage: "Main topic", onEvent });
-    await useCase.execute({ sessionId: "s1", userMessage: "/digin detail", onEvent });
-    await useCase.execute({ sessionId: "s1", userMessage: "Dig question", onEvent });
-    await useCase.execute({ sessionId: "s1", userMessage: "/sumup", onEvent });
-
-    expect(agentRuntime.completeCalls).toBe(1);
-
-    const saved = await sessionStore.get("s1");
-    expect(saved?.digStack).toHaveLength(0);
-    expect(Object.keys(saved?.turns ?? {})).toHaveLength(3);
-
-    const cursorMessages = projectCursorPath(saved!);
-    expect(cursorMessages.some((m) => m.content === "Dig question")).toBe(false);
-    expect(cursorMessages.some((m) => m.content.includes("Returned to:"))).toBe(true);
   });
 });

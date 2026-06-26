@@ -21,10 +21,6 @@ import {
   mergeProcessState,
   startProcess,
 } from "../services/process-lifecycle.js";
-import {
-  renderSumupPrompt,
-  renderSumupSystemPrompt,
-} from "../services/session-sumup-builder.js";
 import type {
   AgentRuntimeEvent,
   EditPermissionGate,
@@ -35,11 +31,7 @@ import type { SessionCommand } from "../../domain/session/session-command.js";
 import type { Session } from "../../domain/session/session.js";
 import {
   appendTurn,
-  beginDig,
-  createReturnSummaryTurn,
-  popDigFrame,
   projectCursorPath,
-  projectDigressionPath,
   renderTree,
 } from "../../domain/session/turn-tree.js";
 
@@ -78,10 +70,6 @@ export class SendMessageUseCase {
     const command = parseSessionCommand(input.userMessage);
 
     switch (command.kind) {
-      case "digin":
-        return this.handleDigIn(session, command.topic, input);
-      case "sumup":
-        return this.handleSumUp(session, input);
       case "tree":
         return this.handleTree(session, input);
       case "process":
@@ -251,61 +239,6 @@ export class SendMessageUseCase {
     await this.emitDirectResponse(response, input.onEvent);
 
     return response;
-  }
-
-  private async handleDigIn(
-    session: Awaited<ReturnType<SessionStorePort["get"]>> & {},
-    topic: string | undefined,
-    input: SendMessageInput,
-  ): Promise<string> {
-    const frame = beginDig(session, topic);
-
-    let response: string;
-    if (!frame) {
-      response =
-        "Cannot dig in yet: send at least one message before starting a dig-in.";
-    } else if (topic) {
-      response = `Digging into: ${topic}.`;
-    } else {
-      response = "Digging into a detail from the current turn.";
-    }
-
-    session.updatedAt = new Date().toISOString();
-    await this.deps.sessionStore.save(session);
-    await this.emitDirectResponse(response, input.onEvent);
-
-    return response;
-  }
-
-  private async handleSumUp(
-    session: Awaited<ReturnType<SessionStorePort["get"]>> & {},
-    input: SendMessageInput,
-  ): Promise<string> {
-    const frame = session.digStack[session.digStack.length - 1];
-    if (!frame) {
-      const response = "No active dig-in to summarize. Use /digin first.";
-      await this.emitDirectResponse(response, input.onEvent);
-      return response;
-    }
-
-    const baseTurn = session.turns[frame.baseTurnId];
-    const digressionMessages = projectDigressionPath(session, frame);
-    const summaryText = await this.deps.agentRuntime.complete({
-      llm: this.deps.runtime.config.llm,
-      systemPrompt: renderSumupSystemPrompt(this.deps.runtime.prompts.sumupSystem),
-      messages: digressionMessages,
-      prompt: renderSumupPrompt(this.deps.runtime.prompts.sumupUser, frame, baseTurn),
-      signal: input.signal,
-    });
-
-    createReturnSummaryTurn(session, frame, summaryText);
-    popDigFrame(session);
-
-    session.updatedAt = new Date().toISOString();
-    await this.deps.sessionStore.save(session);
-    await this.emitDirectResponse(summaryText, input.onEvent);
-
-    return summaryText;
   }
 
   private async handleTree(
