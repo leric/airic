@@ -180,6 +180,44 @@ title: Note Document
 A note document captures working thoughts, observations, or references without requiring a final decision.
 `;
 
+const SUMUP_SYSTEM_PROMPT = `---
+id: core.sumup-system
+title: Dig-in Sumup System Prompt
+---
+
+You summarize temporary dig-in conversations for Airic Kernel session history.
+Produce a concise return summary that helps the user resume the main discussion.
+Follow the requested structure exactly.
+`;
+
+const SUMUP_USER_PROMPT = `---
+id: core.sumup-user
+title: Dig-in Sumup User Prompt
+---
+
+Summarize the dig-in conversation above and prepare to return to the main discussion.
+
+Resume point: {{resumePoint}}
+Dig-in topic: {{topic}}
+{{baseContext}}
+
+Produce a return summary with exactly this structure:
+
+Returned to: <resume point>
+
+Before dig-in:
+<what we were discussing at the resume point>
+
+Dig-in summary:
+<what the side discussion found>
+
+Brought back:
+<conclusions or constraints that should affect the resumed discussion>
+
+Continuing:
+<where the discussion should continue from>
+`;
+
 const PRECEDENT_EXTRACTION = `---
 id: core.precedent-extraction
 doc_type: core.process
@@ -220,6 +258,8 @@ const CORE_PACK_FILES: PackFile[] = [
     content: PROCESS_SPEC_DEFINITION,
   },
   { relativePath: "processes/precedent-extraction.md", content: PRECEDENT_EXTRACTION },
+  { relativePath: "prompts/sumup-system.md", content: SUMUP_SYSTEM_PROMPT },
+  { relativePath: "prompts/sumup-user.md", content: SUMUP_USER_PROMPT },
 ];
 
 const DEFAULT_SPEC_FILES: PackFile[] = [

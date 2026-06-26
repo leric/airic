@@ -7,10 +7,16 @@ import { SpecRegistry } from "../services/spec-registry.js";
 import { resolveWorkspacePath } from "../../infrastructure/config/yaml-config-loader.js";
 import { syncCorePackToSpecs } from "../use-cases/bootstrap-workspace.js";
 
+export type WorkspacePrompts = {
+  sumupSystem: string;
+  sumupUser: string;
+};
+
 export type WorkspaceRuntime = {
   workspaceRoot: string;
   config: AiricConfig;
   baseInstruction: string;
+  prompts: WorkspacePrompts;
   specRegistry: SpecRegistry;
 };
 
@@ -33,6 +39,18 @@ export class WorkspaceRuntimeLoader {
     const baseInstructionDoc =
       await documentLoader.loadMarkdownDocument(baseInstructionPath);
 
+    const promptPath = (fileName: string) =>
+      resolveWorkspacePath(
+        workspaceRoot,
+        join(config.packs.core, "prompts", fileName),
+      );
+    const sumupSystemDoc = await documentLoader.loadMarkdownDocument(
+      promptPath("sumup-system.md"),
+    );
+    const sumupUserDoc = await documentLoader.loadMarkdownDocument(
+      promptPath("sumup-user.md"),
+    );
+
     const specRegistry = new SpecRegistry();
     const modeSpecs = await documentLoader.loadSpecDocuments(
       resolveWorkspacePath(workspaceRoot, config.specPaths.modes),
@@ -52,6 +70,10 @@ export class WorkspaceRuntimeLoader {
       workspaceRoot,
       config,
       baseInstruction: baseInstructionDoc.body,
+      prompts: {
+        sumupSystem: sumupSystemDoc.body,
+        sumupUser: sumupUserDoc.body,
+      },
       specRegistry,
     };
   }

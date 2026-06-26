@@ -116,6 +116,11 @@ function createUseCase(
         cache: { enabled: true },
       },
       baseInstruction: "Base",
+      prompts: {
+        sumupSystem: "Summarize the dig-in.",
+        sumupUser:
+          "Resume point: {{resumePoint}}\nTopic: {{topic}}\n{{baseContext}}",
+      },
       specRegistry: {
         require: () => modeSpec,
         get: () => undefined,

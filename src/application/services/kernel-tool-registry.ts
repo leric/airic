@@ -1,9 +1,8 @@
 /**
  * Pi Agent Core tool bridge.
  *
- * Named `KernelToolRegistry` (not `AiricToolRegistry` from docs/tools-plan.md) because
- * it adapts Airic tool definitions into Pi Agent Core's AgentTool shape. Tool definitions
- * come from ToolRegistryPort — the single source of truth. See architecture-map.md.
+ * Named `KernelToolRegistry` because it adapts Airic tool definitions into Pi Agent Core's AgentTool shape. 
+ * Tool definitions come from ToolRegistryPort — the single source of truth. See architecture-map.md.
  */
 import type { Session } from "../../domain/session/session.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";

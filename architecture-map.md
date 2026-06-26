@@ -68,7 +68,7 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 
 | Entity | Owns | Location |
 |---|---|---|
-| Session | workspace root, turn tree (cursor + dig stack), current document, active mode, process instances | `domain/session/` — behavior spec: [docs/session-tree.md](docs/session-tree.md); process spec: [docs/process.md](docs/process.md) |
+| Session | workspace root, turn tree (cursor + dig stack), current document, active mode, process instances | `domain/session/` — spec: [docs/kernel-tdd.md](docs/kernel-tdd.md) §8, §11, §12 |
 | TurnNode | one user+assistant exchange in the session tree | `domain/session/turn-node.ts` |
 | ProcessInstance | one process workflow run (active / completed / cancelled) | `domain/session/session.ts` |
 | PendingEdit | proposed mutation before user accept | `domain/tool/pending-edit.ts` |
@@ -85,10 +85,10 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 - Workspace path resolution → `domain/path/workspace-path.ts`.
 - Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; raw digression and `toolTrace` excluded after `/sumup`). System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + process index or active process spec + current document).
 - Available modes → `application/services/mode-catalog.ts` (`listAvailableModes` from spec registry `core.mode` docs). ACP `session/new` returns `modes`; `session/set_mode` → `SelectModeUseCase`.
-- Process lifecycle → `application/services/process-lifecycle.ts` (start / complete / cancel / status on `Session`). Discovery/index → `application/services/process-catalog.ts`. User slash commands → `domain/session/session-command.ts` + `SendMessageUseCase.handleProcess`. Agent tools → `infrastructure/tools/process/`. Spec: [docs/process.md](docs/process.md).
+- Process lifecycle → `application/services/process-lifecycle.ts` (start / complete / cancel / status on `Session`). Discovery/index → `application/services/process-catalog.ts`. User slash commands → `domain/session/session-command.ts` + `SendMessageUseCase.handleProcess`. Agent tools → `infrastructure/tools/process/`. Spec: [docs/kernel-tdd.md](docs/kernel-tdd.md) §12.
 - Slash commands (kernel) → parse in `domain/session/session-command.ts`; advertise via `application/services/command-catalog.ts` + ACP `available_commands_update` in `interfaces/acp/acp-command-catalog.ts` after `session/new`. **Keep parse list and catalog list in sync** — test: `tests/command-catalog.test.ts`.
 - Process state after agent tools → `SendMessageUseCase.handleMessage` reloads session and calls `mergeProcessState` before final save (tools only receive `sessionId`, not in-memory session).
-- `/sumup` prompt format → `application/services/session-sumup-builder.ts` (spec: `docs/session-tree.md` §10–11).
+- `/sumup` prompt → templates in core pack `.airic/packs/core/prompts/` (`sumup-system.md`, `sumup-user.md`), loaded by `WorkspaceRuntimeLoader` into `WorkspaceRuntime.prompts`; rendered (placeholder fill) by `application/services/session-sumup-builder.ts`. Seeded by `bootstrap-workspace.ts`. Spec: [docs/kernel-tdd.md](docs/kernel-tdd.md) §11.
 - Session tree field defaults → `domain/session/ensure-session-tree.ts` (in-memory) and `JsonSessionStore.get()` (persistence).
 - Dependency direction: domain ← application ← infrastructure; interfaces/acp calls application.
 

@@ -21,8 +21,8 @@ import {
   startProcess,
 } from "../services/process-lifecycle.js";
 import {
-  buildSumupPrompt,
-  buildSumupSystemPrompt,
+  renderSumupPrompt,
+  renderSumupSystemPrompt,
 } from "../services/session-sumup-builder.js";
 import type {
   AgentRuntimeEvent,
@@ -289,9 +289,9 @@ export class SendMessageUseCase {
     const digressionMessages = projectDigressionPath(session, frame);
     const summaryText = await this.deps.agentRuntime.complete({
       llm: this.deps.runtime.config.llm,
-      systemPrompt: buildSumupSystemPrompt(),
+      systemPrompt: renderSumupSystemPrompt(this.deps.runtime.prompts.sumupSystem),
       messages: digressionMessages,
-      prompt: buildSumupPrompt(frame, baseTurn),
+      prompt: renderSumupPrompt(this.deps.runtime.prompts.sumupUser, frame, baseTurn),
       signal: input.signal,
     });
 

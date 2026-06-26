@@ -37,6 +37,8 @@ describe("bootstrapWorkspace", () => {
     const mode = runtime.specRegistry.require("core.thinking-partner");
     expect(mode.docType).toBe("core.mode");
     expect(runtime.baseInstruction).toContain("Airic Kernel");
+    expect(runtime.prompts.sumupSystem).toContain("return summary");
+    expect(runtime.prompts.sumupUser).toContain("{{resumePoint}}");
   });
 
   it("does not overwrite existing mode specs", async () => {

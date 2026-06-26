@@ -1,45 +1,38 @@
 import type { DigFrame } from "../../domain/session/turn-node.js";
 
-/** Prompt policy for `/sumup`. Behavior spec: docs/session-tree.md §10–11. */
-export function buildSumupSystemPrompt(): string {
-  return [
-    "You summarize temporary dig-in conversations for Airic Kernel session history.",
-    "Produce a concise return summary that helps the user resume the main discussion.",
-    "Follow the requested structure exactly.",
-  ].join("\n");
+/** Renders the `/sumup` prompts from core-pack templates loaded into
+ *  `WorkspaceRuntime.prompts` (`.airic/packs/core/prompts/`).
+ *  Behavior spec: docs/kernel-tdd.md §11. */
+
+export function renderSumupSystemPrompt(template: string): string {
+  return template.trim();
 }
 
-export function buildSumupPrompt(
+export function renderSumupPrompt(
+  template: string,
   frame: DigFrame,
   baseTurn: { title: string; assistantMessage: string } | undefined,
 ): string {
   const topic = frame.topic ? `"${frame.topic}"` : "the detail exploration";
   const resumePoint = baseTurn?.title ?? "the previous discussion";
   const baseContext = baseTurn?.assistantMessage
-    ? `\nContext at the resume point (last assistant message):\n${baseTurn.assistantMessage}`
+    ? `Context at the resume point (last assistant message):\n${baseTurn.assistantMessage}`
     : "";
 
-  return [
-    "Summarize the dig-in conversation above and prepare to return to the main discussion.",
-    "",
-    `Resume point: ${resumePoint}`,
-    `Dig-in topic: ${topic}`,
+  const filled = fill(template, {
+    resumePoint,
+    topic,
     baseContext,
-    "",
-    "Produce a return summary with exactly this structure:",
-    "",
-    "Returned to: <resume point>",
-    "",
-    "Before dig-in:",
-    "<what we were discussing at the resume point>",
-    "",
-    "Dig-in summary:",
-    "<what the side discussion found>",
-    "",
-    "Brought back:",
-    "<conclusions or constraints that should affect the resumed discussion>",
-    "",
-    "Continuing:",
-    "<where the discussion should continue from>",
-  ].join("\n");
+  });
+
+  // Collapse the blank line left behind when baseContext is empty.
+  return filled.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function fill(template: string, values: Record<string, string>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(values)) {
+    result = result.split(`{{${key}}}`).join(value);
+  }
+  return result;
 }
