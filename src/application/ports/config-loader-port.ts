@@ -26,11 +26,6 @@ export type AiricConfig = {
   packs: {
     core: string;
   };
-  specPaths: {
-    modes: string;
-    documentTypes: string;
-    processes: string;
-  };
   editing: {
     requireConfirmation: boolean;
   };

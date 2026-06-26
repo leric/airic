@@ -22,7 +22,7 @@ Edits are logged to `.airic/logs/edits.log` after acceptance.
 
 ### Current document
 
-When a file is opened or focused in the ACP client, Airic sets `session.currentDocument` and includes the file in runtime context. If the file declares `doc_type` in frontmatter, the matching spec from `.airic/specs/document-types/` is loaded.
+When a file is opened or focused in the ACP client, Airic sets `session.currentDocument` and includes the file in runtime context. If the file declares `doc_type` in frontmatter, the matching spec from `.airic/packs/core/document-types/` is loaded.
 
 ## Step 1: ACP Chat Agent
 
@@ -63,9 +63,9 @@ Open the Agent panel and start a new Airic thread in your workspace.
 
 ### Behavior configuration
 
-Active mode specs live in `.airic/specs/modes/`. The default mode is `core.thinking-partner` (see `.airic/config.yml`).
+Active mode specs live in `.airic/packs/core/modes/`. The default mode is `core.thinking-partner` (see `.airic/config.yml`).
 
-Edit `.airic/specs/modes/thinking-partner.md` or switch mode via ACP during a session to change agent behavior.
+Edit `.airic/packs/core/modes/thinking-partner.md` or switch mode via ACP during a session to change agent behavior.
 
 Base kernel instructions come from `.airic/packs/core/base-instruction.md`.
 
@@ -75,13 +75,9 @@ Core pack layout:
 .airic/packs/core/
   base-instruction.md
   modes/              # concrete mode instances (e.g. thinking-partner)
-  document-types/     # meta definitions: mode, document-type, process spec kinds
+  document-types/     # meta definitions + concrete doc-types (task, precedent, …)
   processes/          # concrete process instances
-
-.airic/specs/
-  modes/              # active mode specs (synced from pack)
-  document-types/     # concrete document-type specs (e.g. decision, note, task)
-  processes/          # active process specs (synced from pack)
+  tools/              # core.tool usage docs (one per system tool)
 ```
 
 ## Architecture

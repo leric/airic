@@ -19,7 +19,8 @@ describe("bootstrapWorkspace", () => {
     const modeSpecPath = join(
       workspaceRoot,
       ".airic",
-      "specs",
+      "packs",
+      "core",
       "modes",
       "thinking-partner.md",
     );
@@ -67,7 +68,8 @@ describe("bootstrapWorkspace", () => {
     const modeSpecPath = join(
       workspaceRoot,
       ".airic",
-      "specs",
+      "packs",
+      "core",
       "modes",
       "thinking-partner.md",
     );

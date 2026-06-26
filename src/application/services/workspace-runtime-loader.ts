@@ -5,7 +5,6 @@ import type { FileSystemPort } from "../ports/file-system-port.js";
 import { DocumentLoader } from "../../infrastructure/markdown/document-loader.js";
 import { SpecRegistry } from "../services/spec-registry.js";
 import { resolveWorkspacePath } from "../../infrastructure/config/yaml-config-loader.js";
-import { syncCorePackToSpecs } from "../use-cases/bootstrap-workspace.js";
 
 export type WorkspaceRuntime = {
   workspaceRoot: string;
@@ -21,30 +20,29 @@ export class WorkspaceRuntimeLoader {
   ) {}
 
   async load(workspaceRoot: string): Promise<WorkspaceRuntime> {
-    await syncCorePackToSpecs(this.fs, workspaceRoot);
-
     const config = await this.configLoader.load(workspaceRoot);
     const documentLoader = new DocumentLoader(this.fs);
+    const corePack = config.packs.core;
 
     const baseInstructionPath = resolveWorkspacePath(
       workspaceRoot,
-      join(config.packs.core, "base-instruction.md"),
+      join(corePack, "base-instruction.md"),
     );
     const baseInstructionDoc =
       await documentLoader.loadMarkdownDocument(baseInstructionPath);
 
     const specRegistry = new SpecRegistry();
     const modeSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, config.specPaths.modes),
+      resolveWorkspacePath(workspaceRoot, join(corePack, "modes")),
     );
     const documentTypeSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, config.specPaths.documentTypes),
+      resolveWorkspacePath(workspaceRoot, join(corePack, "document-types")),
     );
     const processSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, config.specPaths.processes),
+      resolveWorkspacePath(workspaceRoot, join(corePack, "processes")),
     );
     const toolSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, join(config.packs.core, "tools")),
+      resolveWorkspacePath(workspaceRoot, join(corePack, "tools")),
     );
 
     specRegistry.registerAll(modeSpecs);

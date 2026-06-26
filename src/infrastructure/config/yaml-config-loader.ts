@@ -28,20 +28,6 @@ export class YamlConfigLoader implements ConfigLoaderPort {
       packs: {
         core: readString(readObject(parsed.packs).core, ".airic/packs/core"),
       },
-      specPaths: {
-        modes: readString(
-          readObject(parsed.spec_paths).modes,
-          ".airic/specs/modes",
-        ),
-        documentTypes: readString(
-          readObject(parsed.spec_paths).document_types,
-          ".airic/specs/document-types",
-        ),
-        processes: readString(
-          readObject(parsed.spec_paths).processes,
-          ".airic/specs/processes",
-        ),
-      },
       editing: {
         requireConfirmation: readBoolean(
           readObject(parsed.editing).require_confirmation,

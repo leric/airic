@@ -8,11 +8,6 @@ llm:
 packs:
   core: .airic/packs/core
 
-spec_paths:
-  modes: .airic/specs/modes
-  document_types: .airic/specs/document-types
-  processes: .airic/specs/processes
-
 editing:
   require_confirmation: true
 

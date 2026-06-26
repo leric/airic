@@ -24,9 +24,6 @@ export async function bootstrapWorkspace(
 
   await ensureDir(fs, airicRoot, createdPaths);
   await ensureDir(fs, join(airicRoot, "packs", "core"), createdPaths);
-  await ensureDir(fs, join(airicRoot, "specs", "modes"), createdPaths);
-  await ensureDir(fs, join(airicRoot, "specs", "document-types"), createdPaths);
-  await ensureDir(fs, join(airicRoot, "specs", "processes"), createdPaths);
   await ensureDir(fs, join(airicRoot, "sessions"), createdPaths);
   await ensureDir(fs, join(airicRoot, "logs"), createdPaths);
   await ensureDir(fs, join(airicRoot, "cache"), createdPaths);
@@ -45,54 +42,7 @@ export async function bootstrapWorkspace(
     createdPaths,
   );
 
-  await syncCorePackToSpecs(fs, workspaceRoot);
-
   return { workspaceRoot, airicRoot, createdPaths };
-}
-
-export async function syncCorePackToSpecs(
-  fs: FileSystemPort,
-  workspaceRoot: string,
-): Promise<void> {
-  const airicRoot = join(workspaceRoot, ".airic");
-  const mappings = [
-    {
-      from: join(airicRoot, "packs", "core", "modes"),
-      to: join(airicRoot, "specs", "modes"),
-    },
-    {
-      from: join(airicRoot, "packs", "core", "document-types"),
-      to: join(airicRoot, "specs", "document-types"),
-    },
-    {
-      from: join(airicRoot, "packs", "core", "processes"),
-      to: join(airicRoot, "specs", "processes"),
-    },
-  ];
-
-  for (const mapping of mappings) {
-    const exists = await fs.exists(mapping.from);
-    if (!exists) {
-      continue;
-    }
-
-    await fs.mkdir(mapping.to, true);
-    const files = await fs.readDir(mapping.from);
-
-    for (const filePath of files) {
-      if (!filePath.endsWith(".md")) {
-        continue;
-      }
-      const fileName = filePath.split("/").pop()!;
-      const destination = join(mapping.to, fileName);
-      const sourceExists = await fs.exists(filePath);
-      const destinationExists = await fs.exists(destination);
-
-      if (sourceExists && !destinationExists) {
-        await fs.copyFile(filePath, destination);
-      }
-    }
-  }
 }
 
 async function ensureDir(

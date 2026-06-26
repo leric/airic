@@ -85,11 +85,6 @@ function createUseCase(
           thinkingLevel: "off",
         },
         packs: { core: ".airic/packs/core" },
-        specPaths: {
-          modes: ".airic/specs/modes",
-          documentTypes: ".airic/specs/document-types",
-          processes: ".airic/specs/processes",
-        },
         editing: { requireConfirmation: true },
         cache: { enabled: true },
       },

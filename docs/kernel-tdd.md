@@ -41,7 +41,6 @@ user-workspace/
 
   .airic/
     config.yml
-    specs/
     packs/
     sessions/
     logs/
@@ -116,7 +115,7 @@ anti-pollution logic and spec/tool typing.
 **Use cases** (`use-cases/`):
 
 - `SendMessageUseCase` — the runtime loop (see §10).
-- `bootstrapWorkspace` / `syncCorePackToSpecs` — create and sync `.airic/`.
+- `bootstrapWorkspace` — create and seed `.airic/` from the bundled pack.
 - `SelectModeUseCase` — switch the active mode.
 - `OpenDocumentUseCase`, `ProposeFileEditUseCase`, `ApplyFileEditUseCase` — current-document
   tracking and the reviewable edit pipeline.
@@ -179,11 +178,6 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
                             #   session-reflection)
       tools/                # core.tool usage docs (one per system tool, always resident)
 
-  specs/
-    modes/                  # active mode specs (synced from pack)
-    document-types/         # concrete doc-types (task, precedent, …) synced from pack
-    processes/              # active process specs (synced from pack)
-
   sessions/
     <session-id>.json       # full session state incl. turn tree + process instances
 
@@ -193,16 +187,17 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
   cache/
 ```
 
-### Bootstrapping and sync
+### Bootstrapping
 
 On `session/new`, `bootstrapWorkspace` copies bundled content from the Airic package's
-`.airic/` directory (shipped with the repo or npm install) into the user workspace: `config.default.yml`
-→ `config.yml`, the full `packs/core/` tree. Existing files are never overwritten. Pack prose
-is edited only under `.airic/packs/core/` in the Airic repository — not duplicated in
-TypeScript. `syncCorePackToSpecs` then copies pack `modes/`, `document-types/`, and
-`processes/` into `specs/` (copy only when the destination does not already exist, so user
-edits are preserved). The base instruction and tool usage docs are loaded directly from the
-pack; tool usage docs are not copied into `specs/`.
+`.airic/` directory (shipped with the repo or npm install) into the user workspace:
+`config.default.yml` → `config.yml`, and the full `packs/core/` tree. Existing files are
+never overwritten. User edits and Airic upgrades both target the same pack files; review
+changes via git diff. Pack prose is edited only under `.airic/packs/core/` in the Airic
+repository — not duplicated in TypeScript.
+
+`WorkspaceRuntimeLoader` loads all markdown specs (modes, document-types, processes, tools)
+directly from `packs/core/` subdirectories.
 
 ---
 
@@ -411,7 +406,7 @@ deliberately not prescribed yet; the tree data model is retained for future expe
 
 Processes are markdown-defined but lifecycle-managed by the kernel.
 
-- **Discovery / registry** — process specs under `specs/processes/` are loaded into the
+- **Discovery / registry** — process specs under `packs/core/processes/` are loaded into the
   `SpecRegistry`; `listProcesses` builds a lightweight index (excluding the `core.process`
   spec-kind definition itself).
 - **User commands** — `/process` (= `list`), `/process list`, `/process start <id>`,
@@ -501,11 +496,6 @@ llm:
 
 packs:
   core: .airic/packs/core
-
-spec_paths:
-  modes: .airic/specs/modes
-  document_types: .airic/specs/document-types
-  processes: .airic/specs/processes
 
 editing:
   require_confirmation: true
