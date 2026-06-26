@@ -12,7 +12,7 @@ export class YamlConfigLoader implements ConfigLoaderPort {
     const parsed = loadYaml(raw) as Record<string, unknown>;
 
     return {
-      defaultMode: readString(parsed.default_mode, "core.thinking-partner"),
+      defaultMode: readString(parsed.default_mode, "core.mode.thinking-partner"),
       llm: {
         provider: readString(readObject(parsed.llm).provider, "openai"),
         model: readString(readObject(parsed.llm).model, "gpt-4o"),

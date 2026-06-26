@@ -21,12 +21,12 @@ describe("bootstrapWorkspace", () => {
       ".airic",
       "packs",
       "core",
-      "modes",
+      "mode",
       "thinking-partner.md",
     );
 
     await expect(readFile(configPath, "utf8")).resolves.toContain(
-      "core.thinking-partner",
+      "core.mode.thinking-partner",
     );
     await expect(readFile(modeSpecPath, "utf8")).resolves.toContain(
       "Thinking Partner",
@@ -37,21 +37,23 @@ describe("bootstrapWorkspace", () => {
       ".airic",
       "packs",
       "core",
-      "document-types",
+      "document-type",
       "tool.md",
     );
     await expect(readFile(toolKindPath, "utf8")).resolves.toContain(
-      "core.tool",
+      "core.document-type.tool",
     );
 
     const configLoader = new YamlConfigLoader(fs);
     const runtimeLoader = new WorkspaceRuntimeLoader(fs, configLoader);
     const runtime = await runtimeLoader.load(workspaceRoot);
 
-    const mode = runtime.specRegistry.require("core.thinking-partner");
+    const mode = runtime.specRegistry.require("core.mode.thinking-partner");
     expect(mode.docType).toBe("core.mode");
     expect(runtime.baseInstruction).toContain("thinking partner");
-    expect(runtime.specRegistry.get("core.task")?.docType).toBe("core.document-type");
+    expect(runtime.specRegistry.get("core.document-type.task")?.docType).toBe(
+      "core.document-type",
+    );
 
     const toolDocs = runtime.specRegistry.listByDocType("core.tool");
     expect(toolDocs.length).toBeGreaterThanOrEqual(12);
@@ -70,7 +72,7 @@ describe("bootstrapWorkspace", () => {
       ".airic",
       "packs",
       "core",
-      "modes",
+      "mode",
       "thinking-partner.md",
     );
 

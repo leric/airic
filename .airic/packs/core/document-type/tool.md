@@ -1,5 +1,5 @@
 ---
-id: core.tool
+id: core.document-type.tool
 doc_type: core.document-type
 title: Tool
 ---
@@ -53,7 +53,7 @@ When editing a tool document:
 
 - keep methodology separate from the code contract
 - preserve the one-to-one `tool:` binding
-- update the matching file under `packs/core/tools/` when changing default usage prose for new workspaces
+- update the matching file under `packs/core/tool/` when changing default usage prose for new workspaces
 - prefer concrete patterns over generic advice
 
-Concrete tool usage instances live under `packs/core/tools/` and are loaded directly into the runtime spec registry.
+Concrete tool usage instances live under `packs/core/tool/` and are loaded directly into the runtime spec registry.

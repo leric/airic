@@ -1,5 +1,5 @@
 ---
-id: core.task-decomposition
+id: core.process.task-decomposition
 doc_type: core.process
 title: Task Decomposition
 summary: Turn clarified intent into executable task documents.

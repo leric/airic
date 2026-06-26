@@ -36,15 +36,15 @@ describe("parseSessionCommand", () => {
       action: "cancel",
       reason: "no longer needed",
     });
-    expect(parseSessionCommand("/process start core.task-decomposition")).toEqual({
+    expect(parseSessionCommand("/process start core.process.task-decomposition")).toEqual({
       kind: "process",
       action: "start",
-      processId: "core.task-decomposition",
+      processId: "core.process.task-decomposition",
     });
-    expect(parseSessionCommand("/process core.task-decomposition")).toEqual({
+    expect(parseSessionCommand("/process core.process.task-decomposition")).toEqual({
       kind: "process",
       action: "start",
-      processId: "core.task-decomposition",
+      processId: "core.process.task-decomposition",
     });
   });
 });
@@ -59,7 +59,7 @@ describe("generateTurnTitle", () => {
 
 describe("turn tree operations", () => {
   it("appends turns along the cursor path", () => {
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
 
     appendTurn(session, {
       userMessage: "Hello",
@@ -81,7 +81,7 @@ describe("turn tree operations", () => {
   });
 
   it("renders a tree with current marker", () => {
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
     appendTurn(session, {
       userMessage: "Root",
       assistantMessage: "Root reply",

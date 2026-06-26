@@ -1,5 +1,5 @@
 ---
-id: core.document-type
+id: core.document-type.document-type
 doc_type: core.document-type
 title: Document Type
 ---

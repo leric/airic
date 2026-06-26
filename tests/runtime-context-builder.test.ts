@@ -7,8 +7,8 @@ describe("RuntimeContextBuilder", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "# Mode\n\nAsk thoughtful questions.",
     };
@@ -35,8 +35,8 @@ describe("RuntimeContextBuilder", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
@@ -45,29 +45,29 @@ describe("RuntimeContextBuilder", () => {
       baseInstruction: "Base",
       modeSpec,
       processIndex:
-        "- core.task-decomposition: Turn clarified intent into executable task documents.",
+        "- core.process.task-decomposition: Turn clarified intent into executable task documents.",
     });
 
     expect(prompt).toContain("## Available Processes");
-    expect(prompt).toContain("core.task-decomposition");
+    expect(prompt).toContain("core.process.task-decomposition");
   });
 
   it("includes full active process spec instead of index", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
     const activeProcessSpec: SpecDocument = {
       path: "task-decomposition.md",
       frontmatter: {
-        id: "core.task-decomposition",
+        id: "core.process.task-decomposition",
         doc_type: "core.process",
       },
-      id: "core.task-decomposition",
+      id: "core.process.task-decomposition",
       docType: "core.process",
       body: "Follow the task decomposition method.",
     };
@@ -75,7 +75,7 @@ describe("RuntimeContextBuilder", () => {
     const prompt = builder.buildSystemPrompt({
       baseInstruction: "Base",
       modeSpec,
-      processIndex: "- core.task-decomposition: summary",
+      processIndex: "- core.process.task-decomposition: summary",
       activeProcessSpec,
     });
 
@@ -88,8 +88,8 @@ describe("RuntimeContextBuilder", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
@@ -110,8 +110,8 @@ describe("RuntimeContextBuilder", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
@@ -130,8 +130,8 @@ describe("RuntimeContextBuilder", () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };

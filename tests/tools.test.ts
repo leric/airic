@@ -258,7 +258,7 @@ describe("ToolExecutor policy", () => {
     const root = await mkdtemp(join(tmpdir(), "airic-policy-"));
     const fs = new NodeFileSystem();
     const sessionStore = new JsonSessionStore(fs, root);
-    const session = createSession("s1", root, "core.thinking-partner");
+    const session = createSession("s1", root, "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     let policyChecked = false;

@@ -65,7 +65,7 @@ function createUseCase(
   const modeSpec: SpecDocument = {
     path: "mode.md",
     frontmatter: {},
-    id: "core.thinking-partner",
+    id: "core.mode.thinking-partner",
     docType: "core.mode",
     body: "Mode",
   };
@@ -76,7 +76,7 @@ function createUseCase(
     runtime: {
       workspaceRoot: "/tmp/workspace",
       config: {
-        defaultMode: "core.thinking-partner",
+        defaultMode: "core.mode.thinking-partner",
         llm: {
           provider: "openai",
           model: "gpt-4o",
@@ -110,7 +110,7 @@ describe("SendMessageUseCase", () => {
   it("delegates to AgentRuntimePort and persists turn tree", async () => {
     const sessionStore = new MemorySessionStore();
     const agentRuntime = new FakeAgentRuntime();
-    const session = createSession("s1", "/tmp/workspace", "core.thinking-partner");
+    const session = createSession("s1", "/tmp/workspace", "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     const events: string[] = [];

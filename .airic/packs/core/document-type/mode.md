@@ -1,5 +1,5 @@
 ---
-id: core.mode
+id: core.document-type.mode
 doc_type: core.document-type
 title: Mode
 ---

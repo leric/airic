@@ -26,7 +26,7 @@ function createRuntime(specRegistry: SpecRegistry): WorkspaceRuntime {
   return {
     workspaceRoot: "/tmp/workspace",
     config: {
-      defaultMode: "core.thinking-partner",
+      defaultMode: "core.mode.thinking-partner",
       llm: {
         provider: "openai",
         model: "gpt-4o",
@@ -50,14 +50,14 @@ describe("SelectModeUseCase", () => {
     const specRegistry = new SpecRegistry();
     const modeSpec: SpecDocument = {
       path: "mode.md",
-      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
-      id: "core.thinking-partner",
+      frontmatter: { id: "core.mode.thinking-partner", doc_type: "core.mode" },
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
     specRegistry.register(modeSpec);
 
-    const session = createSession("s1", "/tmp/workspace", "core.thinking-partner");
+    const session = createSession("s1", "/tmp/workspace", "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     const useCase = new SelectModeUseCase({
@@ -67,17 +67,17 @@ describe("SelectModeUseCase", () => {
 
     await useCase.execute({
       sessionId: "s1",
-      modeId: "core.thinking-partner",
+      modeId: "core.mode.thinking-partner",
     });
 
     const saved = await sessionStore.get("s1");
-    expect(saved?.modeId).toBe("core.thinking-partner");
+    expect(saved?.modeId).toBe("core.mode.thinking-partner");
   });
 
   it("rejects unknown mode ids", async () => {
     const sessionStore = new MemorySessionStore();
     const specRegistry = new SpecRegistry();
-    const session = createSession("s1", "/tmp/workspace", "core.thinking-partner");
+    const session = createSession("s1", "/tmp/workspace", "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     const useCase = new SelectModeUseCase({

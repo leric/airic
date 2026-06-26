@@ -1,5 +1,5 @@
 ---
-id: core.process
+id: core.document-type.process
 doc_type: core.document-type
 title: Process
 ---

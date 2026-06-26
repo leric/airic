@@ -7,7 +7,7 @@ import type { SpecDocument } from "../src/domain/spec/spec-document.js";
 function makeToolSpec(tool: string, body: string): SpecDocument {
   const id = `core.tool.${tool.replace(/\./g, "-")}`;
   return {
-    path: `tools/${tool}.md`,
+    path: `tool/${tool}.md`,
     frontmatter: {
       id,
       doc_type: "core.tool",
@@ -46,13 +46,13 @@ describe("buildToolUsageText", () => {
   it("ignores core.tool docs without a tool frontmatter field", () => {
     const registry = new SpecRegistry();
     registry.register({
-      path: "document-types/tool.md",
+      path: "document-type/tool.md",
       frontmatter: {
-        id: "core.tool",
+        id: "core.document-type.tool",
         doc_type: "core.document-type",
       },
-      id: "core.tool",
-      docType: "core.tool",
+      id: "core.document-type.tool",
+      docType: "core.document-type",
       body: "Kind definition — not a usage instance.",
     });
     registry.register(makeToolSpec("read", "Read file contents."));

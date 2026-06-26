@@ -25,21 +25,21 @@ function makeModeSpec(
 describe("listAvailableModes", () => {
   it("returns concrete mode specs excluding the mode definition spec", () => {
     const registry = new SpecRegistry();
-    registry.register(makeModeSpec("core.mode", "Mode Spec"));
-    registry.register(makeModeSpec("core.thinking-partner", "Thinking Partner"));
+    registry.register(makeModeSpec("core.document-type.mode", "Mode Spec"));
+    registry.register(makeModeSpec("core.mode.thinking-partner", "Thinking Partner"));
     registry.register(
-      makeModeSpec("founder.idea-stage", "Idea Stage", "Early exploration"),
+      makeModeSpec("founder.mode.idea-stage", "Idea Stage", "Early exploration"),
     );
 
     const modes = listAvailableModes(registry);
 
     expect(modes).toEqual([
       {
-        id: "core.thinking-partner",
+        id: "core.mode.thinking-partner",
         name: "Thinking Partner",
       },
       {
-        id: "founder.idea-stage",
+        id: "founder.mode.idea-stage",
         name: "Idea Stage",
         description: "Early exploration",
       },

@@ -1,5 +1,5 @@
 ---
-id: core.session-reflection
+id: core.process.session-reflection
 doc_type: core.process
 title: Session Reflection
 summary: Compress a thinking session into durable continuation state.

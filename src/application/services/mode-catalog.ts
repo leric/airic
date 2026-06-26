@@ -1,3 +1,4 @@
+import { DOCUMENT_TYPE_META_IDS } from "../../domain/document/document-id.js";
 import type { SpecRegistry } from "./spec-registry.js";
 
 export type ModeSummary = {
@@ -9,7 +10,7 @@ export type ModeSummary = {
 export function listAvailableModes(specRegistry: SpecRegistry): ModeSummary[] {
   return specRegistry
     .listByDocType("core.mode")
-    .filter((spec) => spec.id !== "core.mode")
+    .filter((spec) => spec.id !== DOCUMENT_TYPE_META_IDS.mode)
     .map((spec) => ({
       id: spec.id,
       name: readTitle(spec.frontmatter.title, spec.id),

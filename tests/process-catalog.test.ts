@@ -31,16 +31,16 @@ function makeProcessSpec(
 describe("listProcesses", () => {
   it("returns concrete process specs excluding the process definition spec", () => {
     const registry = new SpecRegistry();
-    registry.register(makeProcessSpec("core.process"));
-    registry.register(makeProcessSpec("core.task-decomposition"));
-    registry.register(makeProcessSpec("core.precedent-extraction"));
+    registry.register(makeProcessSpec("core.document-type.process"));
+    registry.register(makeProcessSpec("core.process.task-decomposition"));
+    registry.register(makeProcessSpec("core.process.precedent-extraction"));
 
     const processes = listProcesses(registry);
 
     expect(processes).toHaveLength(2);
     expect(processes.map((process) => process.id)).toEqual([
-      "core.task-decomposition",
-      "core.precedent-extraction",
+      "core.process.task-decomposition",
+      "core.process.precedent-extraction",
     ]);
     expect(processes[0]?.activation).toBe("suggested");
   });
@@ -50,7 +50,7 @@ describe("buildProcessIndexText", () => {
   it("formats compact process index for prompt injection", () => {
     const text = buildProcessIndexText([
       {
-        id: "core.task-decomposition",
+        id: "core.process.task-decomposition",
         title: "Task Decomposition",
         summary: "Turn clarified intent into executable task documents.",
         triggers: ["user wants tasks", "stable objective needs delegation"],
@@ -59,7 +59,7 @@ describe("buildProcessIndexText", () => {
       },
     ]);
 
-    expect(text).toContain("core.task-decomposition");
+    expect(text).toContain("core.process.task-decomposition");
     expect(text).toContain("Turn clarified intent into executable task documents.");
     expect(text).toContain("Triggers:");
     expect(text).toContain("Activation: suggested.");
@@ -70,7 +70,7 @@ describe("formatProcessListForUser", () => {
   it("formats process list for /process list output", () => {
     const text = formatProcessListForUser([
       {
-        id: "core.task-decomposition",
+        id: "core.process.task-decomposition",
         title: "Task Decomposition",
         summary: "Turn clarified intent into executable task documents.",
         triggers: [],
@@ -79,7 +79,7 @@ describe("formatProcessListForUser", () => {
       },
     ]);
 
-    expect(text).toContain("core.task-decomposition");
+    expect(text).toContain("core.process.task-decomposition");
     expect(text).toContain("Activation: suggested.");
   });
 });

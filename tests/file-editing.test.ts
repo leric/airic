@@ -21,14 +21,14 @@ describe("Step 2 file editing", () => {
     const modeSpec: SpecDocument = {
       path: "mode.md",
       frontmatter: {},
-      id: "core.thinking-partner",
+      id: "core.mode.thinking-partner",
       docType: "core.mode",
       body: "Mode body",
     };
     const documentTypeSpec: SpecDocument = {
       path: "task.md",
       frontmatter: {},
-      id: "core.task",
+      id: "core.document-type.task",
       docType: "core.document-type",
       body: "Task standards",
     };
@@ -59,7 +59,7 @@ describe("Step 2 file editing", () => {
     await writeFile(readmePath, "# Hello\n", "utf8");
 
     const sessionStore = new JsonSessionStore(fs, workspaceRoot);
-    const session = createSession("s1", workspaceRoot, "core.thinking-partner");
+    const session = createSession("s1", workspaceRoot, "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     const editStore = new EditStore();
@@ -113,7 +113,7 @@ describe("Step 2 file editing", () => {
       workspaceRoot,
     );
     const sessionStore = new JsonSessionStore(fs, workspaceRoot);
-    const session = createSession("s1", workspaceRoot, "core.thinking-partner");
+    const session = createSession("s1", workspaceRoot, "core.mode.thinking-partner");
     await sessionStore.save(session);
 
     const openDocument = new OpenDocumentUseCase({
@@ -128,7 +128,7 @@ describe("Step 2 file editing", () => {
     );
 
     expect(result.docType).toBe("core.task");
-    expect(result.documentTypeSpec?.id).toBe("core.task");
+    expect(result.documentTypeSpec?.id).toBe("core.document-type.task");
 
     const saved = await sessionStore.get("s1");
     expect(saved?.currentDocument).toContain("docs/tasks/sample.md");

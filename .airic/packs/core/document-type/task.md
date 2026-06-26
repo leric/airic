@@ -1,5 +1,5 @@
 ---
-id: core.task
+id: core.document-type.task
 doc_type: core.document-type
 title: Task
 ---

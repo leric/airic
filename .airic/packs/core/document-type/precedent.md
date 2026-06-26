@@ -1,5 +1,5 @@
 ---
-id: core.precedent
+id: core.document-type.precedent
 doc_type: core.document-type
 title: Precedent
 ---

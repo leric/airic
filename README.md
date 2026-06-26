@@ -113,10 +113,10 @@ The bundled **core pack** defines how Airic thinks and acts:
 ```text
 .airic/packs/core/
   base-instruction.md      # kernel-wide principles
-  modes/                   # thinking modes (default: thinking-partner)
-  document-types/          # meta + concrete doc types (task, precedent, …)
-  processes/               # runnable workflows (task-decomposition, …)
-  tools/                   # one usage doc per kernel tool
+  mode/                    # thinking modes (default: thinking-partner)
+  document-type/           # meta + concrete doc types (task, precedent, …)
+  process/                 # runnable workflows (task-decomposition, …)
+  tool/                    # one usage doc per kernel tool
 ```
 
 - **Default mode:** `core.thinking-partner` — a thinking-first posture; switch modes via ACP `session/set_mode`.

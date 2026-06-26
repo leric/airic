@@ -1,5 +1,5 @@
 ---
-id: core.thinking-partner
+id: core.mode.thinking-partner
 doc_type: core.mode
 title: Thinking Partner
 ---

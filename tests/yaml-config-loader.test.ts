@@ -16,7 +16,7 @@ describe("YamlConfigLoader llm.maxToolRounds", () => {
   it("defaults maxToolRounds to 100 when not set", async () => {
     const workspaceRoot = await writeConfig(
       [
-        "default_mode: core.thinking-partner",
+        "default_mode: core.mode.thinking-partner",
         "llm:",
         "  provider: openai",
         "  model: gpt-4o",
@@ -33,7 +33,7 @@ describe("YamlConfigLoader llm.maxToolRounds", () => {
   it("respects max_tool_rounds override from yaml", async () => {
     const workspaceRoot = await writeConfig(
       [
-        "default_mode: core.thinking-partner",
+        "default_mode: core.mode.thinking-partner",
         "llm:",
         "  provider: openai",
         "  model: gpt-4o",
@@ -51,7 +51,7 @@ describe("YamlConfigLoader llm.maxToolRounds", () => {
   it("falls back to default when max_tool_rounds is invalid", async () => {
     const workspaceRoot = await writeConfig(
       [
-        "default_mode: core.thinking-partner",
+        "default_mode: core.mode.thinking-partner",
         "llm:",
         "  provider: openai",
         "  model: gpt-4o",

@@ -1,3 +1,4 @@
+import { DOCUMENT_TYPE_META_IDS } from "../../domain/document/document-id.js";
 import type { SpecRegistry } from "./spec-registry.js";
 
 export type ProcessActivation = "manual" | "suggested";
@@ -15,7 +16,7 @@ export type ProcessSpecIndex = {
 export function listProcesses(specRegistry: SpecRegistry): ProcessSpecIndex[] {
   return specRegistry
     .listByDocType("core.process")
-    .filter((spec) => spec.id !== "core.process")
+    .filter((spec) => spec.id !== DOCUMENT_TYPE_META_IDS.process)
     .map((spec) => ({
       id: spec.id,
       title: readTitle(spec.frontmatter.title, spec.id),

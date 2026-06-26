@@ -1,5 +1,5 @@
 ---
-id: core.precedent-extraction
+id: core.process.precedent-extraction
 doc_type: core.process
 title: Precedent Extraction
 summary: Extract reusable human judgment from a concrete case.

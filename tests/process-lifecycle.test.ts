@@ -31,11 +31,11 @@ function makeProcessSpec(
 describe("process lifecycle", () => {
   it("starts, completes, and clears active process", () => {
     const registry = new SpecRegistry();
-    registry.register(makeProcessSpec("core.task-decomposition"));
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    registry.register(makeProcessSpec("core.process.task-decomposition"));
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
 
     const { instance } = startProcess(session, registry, {
-      processId: "core.task-decomposition",
+      processId: "core.process.task-decomposition",
       startedBy: "user",
       reason: "User requested task breakdown.",
     });
@@ -54,11 +54,11 @@ describe("process lifecycle", () => {
 
   it("cancels active process and stores reason", () => {
     const registry = new SpecRegistry();
-    registry.register(makeProcessSpec("core.precedent-extraction"));
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    registry.register(makeProcessSpec("core.process.precedent-extraction"));
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
 
     const { instance } = startProcess(session, registry, {
-      processId: "core.precedent-extraction",
+      processId: "core.process.precedent-extraction",
       startedBy: "agent",
       reason: "Reusable judgment detected.",
     });
@@ -77,7 +77,7 @@ describe("process lifecycle", () => {
   it("rejects agent start for manual-only processes", () => {
     const registry = new SpecRegistry();
     registry.register(makeProcessSpec("core.manual-only", "manual"));
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
 
     expect(() =>
       startProcess(session, registry, {
@@ -90,18 +90,18 @@ describe("process lifecycle", () => {
 
   it("rejects starting a second process while one is active", () => {
     const registry = new SpecRegistry();
-    registry.register(makeProcessSpec("core.task-decomposition"));
-    registry.register(makeProcessSpec("core.precedent-extraction"));
-    const session = createSession("s1", "/tmp", "core.thinking-partner");
+    registry.register(makeProcessSpec("core.process.task-decomposition"));
+    registry.register(makeProcessSpec("core.process.precedent-extraction"));
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
 
     startProcess(session, registry, {
-      processId: "core.task-decomposition",
+      processId: "core.process.task-decomposition",
       startedBy: "user",
     });
 
     expect(() =>
       startProcess(session, registry, {
-        processId: "core.precedent-extraction",
+        processId: "core.process.precedent-extraction",
         startedBy: "user",
       }),
     ).toThrow(/already active/i);

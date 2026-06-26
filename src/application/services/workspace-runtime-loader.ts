@@ -1,4 +1,7 @@
-import { join } from "node:path";
+import {
+  packSpecDirectory,
+  resolveDocumentId,
+} from "../../domain/document/document-id.js";
 import type { AiricConfig } from "../ports/config-loader-port.js";
 import type { ConfigLoaderPort } from "../ports/config-loader-port.js";
 import type { FileSystemPort } from "../ports/file-system-port.js";
@@ -24,25 +27,38 @@ export class WorkspaceRuntimeLoader {
     const documentLoader = new DocumentLoader(this.fs);
     const corePack = config.packs.core;
 
+    const packs = config.packs;
     const baseInstructionPath = resolveWorkspacePath(
       workspaceRoot,
-      join(corePack, "base-instruction.md"),
+      resolveDocumentId("core.base-instruction", packs),
     );
     const baseInstructionDoc =
       await documentLoader.loadMarkdownDocument(baseInstructionPath);
 
     const specRegistry = new SpecRegistry();
     const modeSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, join(corePack, "modes")),
+      resolveWorkspacePath(
+        workspaceRoot,
+        packSpecDirectory(corePack, "mode"),
+      ),
     );
     const documentTypeSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, join(corePack, "document-types")),
+      resolveWorkspacePath(
+        workspaceRoot,
+        packSpecDirectory(corePack, "document-type"),
+      ),
     );
     const processSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, join(corePack, "processes")),
+      resolveWorkspacePath(
+        workspaceRoot,
+        packSpecDirectory(corePack, "process"),
+      ),
     );
     const toolSpecs = await documentLoader.loadSpecDocuments(
-      resolveWorkspacePath(workspaceRoot, join(corePack, "tools")),
+      resolveWorkspacePath(
+        workspaceRoot,
+        packSpecDirectory(corePack, "tool"),
+      ),
     );
 
     specRegistry.registerAll(modeSpecs);

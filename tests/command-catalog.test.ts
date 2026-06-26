@@ -24,8 +24,8 @@ function makeProcessSpec(id: string): SpecDocument {
 describe("listAvailableSlashCommands", () => {
   it("returns kernel slash commands with process ids in the process hint", () => {
     const registry = new SpecRegistry();
-    registry.register(makeProcessSpec("core.task-decomposition"));
-    registry.register(makeProcessSpec("core.precedent-extraction"));
+    registry.register(makeProcessSpec("core.process.task-decomposition"));
+    registry.register(makeProcessSpec("core.process.precedent-extraction"));
 
     const commands = listAvailableSlashCommands(registry);
 
@@ -35,8 +35,8 @@ describe("listAvailableSlashCommands", () => {
     ]);
 
     const processCommand = commands.find((command) => command.name === "process");
-    expect(processCommand?.inputHint).toContain("core.task-decomposition");
-    expect(processCommand?.inputHint).toContain("core.precedent-extraction");
+    expect(processCommand?.inputHint).toContain("core.process.task-decomposition");
+    expect(processCommand?.inputHint).toContain("core.process.precedent-extraction");
   });
 
   it("lists only commands that parseSessionCommand recognizes", () => {
