@@ -61,10 +61,14 @@ export class WorkspaceRuntimeLoader {
     const processSpecs = await documentLoader.loadSpecDocuments(
       resolveWorkspacePath(workspaceRoot, config.specPaths.processes),
     );
+    const toolSpecs = await documentLoader.loadSpecDocuments(
+      resolveWorkspacePath(workspaceRoot, join(config.packs.core, "tools")),
+    );
 
     specRegistry.registerAll(modeSpecs);
     specRegistry.registerAll(documentTypeSpecs);
     specRegistry.registerAll(processSpecs);
+    specRegistry.registerAll(toolSpecs);
 
     return {
       workspaceRoot,

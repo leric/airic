@@ -135,6 +135,7 @@ anti-pollution logic and spec/tool typing.
 - `SpecRegistry` → in-memory map of specs by id, with `listByDocType`.
 - `process-catalog` + `process-lifecycle` → process index text and start/complete/cancel/
   status state transitions.
+- `tool-usage-catalog` → builds always-resident `## Tool Usage` text from `core.tool` specs.
 - `KernelToolRegistry` → adapts Airic tool definitions for the agent runtime; `ToolExecutor`
   → policy checks, execution, and diff-confirmation routing; `MutationCoordinator` → the
   propose → confirm → apply → log flow.
@@ -177,10 +178,11 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
     core/
       base-instruction.md
       modes/                # concrete mode instances (thinking-partner)
-      document-types/       # spec-kind definitions (mode, document-type, process) + precedent
+      document-types/       # spec-kind definitions (mode, document-type, process, tool) + precedent
       processes/            # concrete processes (precedent-extraction, task-decomposition,
                             #   session-reflection)
       prompts/              # kernel prompt templates (sumup-system, sumup-user)
+      tools/                # core.tool usage docs (one per system tool, always resident)
 
   specs/
     modes/                  # active mode specs (synced from pack)
@@ -198,28 +200,58 @@ The ACP adapter is a delivery mechanism, deliberately kept outside the kernel:
 
 ### Bootstrapping and sync
 
-On `session/new`, `bootstrapWorkspace` creates any missing `.airic/` directories and seeds
-default content (config, base instruction, thinking-partner mode, spec-kind definitions,
-default document-types, and kernel prompt templates under `packs/core/prompts/`).
+On `session/new`, `bootstrapWorkspace` copies bundled content from the Airic package's
+`.airic/` directory (shipped with the repo or npm install) into the user workspace: `config.default.yml`
+→ `config.yml`, the full `packs/core/` tree, and default specs (`decision`, `task`, `note`).
+Existing files are never overwritten. Pack prose is edited only under `.airic/packs/core/` in
+the Airic repository — not duplicated in TypeScript.
 `syncCorePackToSpecs` then copies pack `modes/` and `processes/` into `specs/` (copy only when
-the destination does not already exist, so user edits are preserved). The base instruction and
-the prompt templates are loaded directly from the pack; they are not copied into `specs/`.
+the destination does not already exist, so user edits are preserved). The base instruction,
+prompt templates, and tool usage docs are loaded directly from the pack; they are not copied
+into `specs/`.
 
 ---
 
 ## 6. Markdown Specs
 
 All specs are ordinary markdown with minimal frontmatter; their body is prose for the agent
-to read and follow. There are three spec doc types:
+to read and follow. There are four spec doc types:
 
 ```text
 core.mode             thinking style / session posture
 core.document-type    quality bar for a kind of user document
 core.process          repeatable, skill-like workflow with a lifecycle
+core.tool             usage methodology for one system tool (one-to-one with tool name)
 ```
 
 The `SpecRegistry` indexes specs by `id`. A document-type spec is resolved simply by looking
 up the `doc_type` value as a spec id (e.g. `doc_type: core.decision` → spec `core.decision`).
+
+Each spec doc type has a kind-definition document under `packs/core/document-types/`
+(for example `tool.md` describes what a `core.tool` instance document is).
+
+### Tool ownership
+
+- **Capability / contract** (tool name, input schema, one-line description, hard constraints) =
+  code in `src/infrastructure/tools/`.
+- **Usage methodology** (when/why/how to combine tools) = `core.tool` documents in
+  `packs/core/tools/`, bound one-to-one via frontmatter `tool:` (no override mechanism; edit
+  in place).
+- **Cross-tool creative usage** = ordinary `core.mode` / `core.process` prose layered on top.
+- **Judgment** = agent.
+
+All `core.tool` docs are always injected into the system prompt as `## Tool Usage`.
+
+### Tool frontmatter
+
+```yaml
+id: core.tool.grep
+doc_type: core.tool
+tool: grep
+title: grep Usage
+```
+
+The `tool` field must match a registered kernel tool name (`ALL_KERNEL_TOOL_NAMES`).
 
 ### Process frontmatter
 
@@ -322,6 +354,7 @@ base instruction (from core pack)
 + active mode spec body
 + EITHER the full active process spec (if a process is active)
   OR a compact process index (otherwise)
++ Tool Usage (all core.tool docs, always resident)
 + current document (path, doc_type, fenced content) and its document-type spec, if any
 ```
 
@@ -347,6 +380,7 @@ For each prompt:
 4. Otherwise (`handleMessage`):
    - Resolve the active mode spec.
    - Build process context (active spec or process index).
+   - Build tool usage text from `core.tool` specs.
    - Load current-document context (with a refresh closure).
    - Build the system context.
    - Project the cursor path as prior messages.
@@ -436,6 +470,13 @@ bash(command, timeout?)
 
 Process tools: `process.start`, `process.complete`, `process.cancel`, `process.status`,
 `process.list`.
+
+### Contract vs usage
+
+Code owns the callable contract (name, JSON schema, terse `description`, policy/confirmation
+flags). Usage methodology lives in `core.tool` documents under `packs/core/tools/` and is
+injected as `## Tool Usage` on every turn. Scenario packs may describe creative cross-tool
+patterns in mode or process prose without replacing `core.tool` docs.
 
 ### Edit pipeline (reviewable by default)
 
@@ -531,7 +572,67 @@ UI (ACP client): chat interface, file view/edit, diff acceptance, command autoco
 
 ---
 
-## 16. Testing
+## 16. Design Principle: Behavior in Documents, Mechanism in Code
+
+Airic's defining feature is that **agent behavior is defined by documents**, not compiled into
+the kernel. This is not a vague aspiration; it is enforced as a strict layering rule that
+separates what is editable from what is not.
+
+### Behavior strategy → documents (editable, extensible)
+
+Everything that shapes *how the agent should think and act* lives in pack markdown and can be
+read, edited, or extended without touching code:
+
+- `base-instruction.md` — kernel identity and base posture
+- `core.mode` — session thinking style
+- `core.process` — repeatable workflows with lifecycle
+- `core.document-type` — quality bar for user documents
+- `core.tool` — usage methodology for each system tool
+- `prompts/*.md` — kernel-owned prompt templates (e.g. `/sumup`)
+
+A scenario pack layers new behavior on top: it can introduce new modes, processes, document
+types, and cross-tool creative usage as ordinary prose. The kernel loads and assembles these;
+it does not hard-code their content.
+
+### Mechanism → code (transparent, but not document-editable)
+
+The *runtime machinery* that loads documents, builds context, runs the loop, and executes tools
+stays in code. This includes:
+
+- The system-prompt **skeleton** in `RuntimeContextBuilder` — section titles
+  (`## Active Mode`, `## Tool Usage`, …) and assembly order. This is the context framework's
+  contract: adding a `RuntimeContextInput` field requires a code change here.
+- Tool **callable contracts** — name, JSON schema, one-line `description`, policy/confirmation
+  flags. These must stay coupled to the implementation.
+- Command replies and UI text (`"Started process: …"`, `"Digging into: …"`, process index
+  formatting). These are mechanism outputs, not behavior strategy.
+
+This code is **transparent and readable** — `buildSystemPrompt` is one short function, the tool
+contracts are plain objects — so anyone can understand "how the kernel assembles a prompt" by
+reading it. But it is intentionally **not document-editable**, because decoupling it from code
+would reintroduce the drift problem: a second, stale description of how context is built.
+
+### The dividing line
+
+```text
+What the agent should do      → documents   (editable, extensible, per-scenario)
+How the kernel runs           → code        (transparent, coupled, not user-editable)
+```
+
+When a prompt or rule is hardcoded in code, ask which side it falls on:
+
+- If it is *behavior strategy* (how to think, when to use a tool, what a good document looks
+  like), it belongs in a document — extract it.
+- If it is *mechanism* (context skeleton, tool signature, command output), it belongs in code —
+  keep it, and do not duplicate it into a document that will drift.
+
+This rule is what makes Airic's runtime transparent *and* extensible: behavior is openly
+editable in markdown, while the machinery that loads it is openly readable in code, and the two
+never pretend to own each other's concerns.
+
+---
+
+## 17. Testing
 
 `vitest` covers the kernel across layers, including: turn-tree behavior, runtime context
 building, `SendMessageUseCase`, process catalog + lifecycle, kernel tool registry, file tools
@@ -549,9 +650,11 @@ unrestricted dev task) so permission prompts do not block startup.
 
 ---
 
-## 17. Key Design Invariants
+## 18. Key Design Invariants
 
 - **Workspace ownership** — Airic owns only `.airic/`; user files get no hidden metadata.
+- **Behavior in documents, mechanism in code** — see §16. Behavior strategy is editable in pack
+  markdown; runtime machinery stays coupled and transparent in code.
 - **Spec simplicity** — specs are prose + minimal frontmatter, indexed by id; no DSL.
 - **Explicit `doc_type`** — document-type-aware editing requires an explicit frontmatter
   declaration.
@@ -565,7 +668,7 @@ unrestricted dev task) so permission prompts do not block startup.
 
 ---
 
-## 18. Summary
+## 19. Summary
 
 Airic Kernel is a Clean Architecture monolith that turns markdown specs + a core pack +
 runtime context into agent behavior, and serves it to editors over ACP.

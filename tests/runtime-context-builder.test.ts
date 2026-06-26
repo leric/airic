@@ -84,6 +84,48 @@ describe("RuntimeContextBuilder", () => {
     expect(prompt).not.toContain("## Available Processes");
   });
 
+  it("includes Tool Usage when toolUsage is provided", () => {
+    const builder = new RuntimeContextBuilder();
+    const modeSpec: SpecDocument = {
+      path: "mode.md",
+      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
+      id: "core.thinking-partner",
+      docType: "core.mode",
+      body: "Mode body",
+    };
+
+    const prompt = builder.buildSystemPrompt({
+      baseInstruction: "Base",
+      modeSpec,
+      processIndex: "",
+      toolUsage: "### read\n\nRead before edit.",
+    });
+
+    expect(prompt).toContain("## Tool Usage");
+    expect(prompt).toContain("### read");
+    expect(prompt).toContain("Read before edit.");
+  });
+
+  it("omits Tool Usage when toolUsage is empty", () => {
+    const builder = new RuntimeContextBuilder();
+    const modeSpec: SpecDocument = {
+      path: "mode.md",
+      frontmatter: { id: "core.thinking-partner", doc_type: "core.mode" },
+      id: "core.thinking-partner",
+      docType: "core.mode",
+      body: "Mode body",
+    };
+
+    const prompt = builder.buildSystemPrompt({
+      baseInstruction: "Base",
+      modeSpec,
+      processIndex: "",
+      toolUsage: "",
+    });
+
+    expect(prompt).not.toContain("## Tool Usage");
+  });
+
   it("refreshes system prompt via buildAgentContext", async () => {
     const builder = new RuntimeContextBuilder();
     const modeSpec: SpecDocument = {

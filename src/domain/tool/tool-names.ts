@@ -16,4 +16,6 @@ export const KERNEL_TOOL_NAMES = {
 export type KernelToolName =
   (typeof KERNEL_TOOL_NAMES)[keyof typeof KERNEL_TOOL_NAMES];
 
+/** Every name here requires a matching `core.tool` doc (`tool:` frontmatter).
+ *  Sync guard: `tests/tool-usage-catalog.test.ts`. Closure: `architecture-map.md`. */
 export const ALL_KERNEL_TOOL_NAMES = Object.values(KERNEL_TOOL_NAMES);

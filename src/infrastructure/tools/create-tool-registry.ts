@@ -19,6 +19,7 @@ export type ToolRegistryDeps = {
   specRegistry: SpecRegistry;
 };
 
+/** New tools also need a `core.tool` usage doc — see architecture-map.md "Modification closure for a new tool". */
 export function createDefaultToolRegistry(deps: ToolRegistryDeps): ToolRegistryPort {
   const tools: AiricToolDefinition[] = [
     createReadTool(),

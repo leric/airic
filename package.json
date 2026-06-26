@@ -7,6 +7,10 @@
   "bin": {
     "airic": "dist/main.js"
   },
+  "files": [
+    "dist",
+    ".airic"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",

@@ -1,0 +1,21 @@
+default_mode: core.thinking-partner
+
+llm:
+  provider: openai
+  model: gpt-4o
+  temperature: 0.7
+  max_tokens: 4096
+
+packs:
+  core: .airic/packs/core
+
+spec_paths:
+  modes: .airic/specs/modes
+  document_types: .airic/specs/document-types
+  processes: .airic/specs/processes
+
+editing:
+  require_confirmation: true
+
+cache:
+  enabled: true

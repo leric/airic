@@ -30,8 +30,6 @@ export type AiricToolDefinition = {
   inputSchema: Record<string, unknown>;
   policy?: AiricToolPolicy;
   confirmation?: AiricToolConfirmation;
-  promptSnippet?: string;
-  promptGuidelines?: string[];
   sequential?: boolean;
   present?: (args: Record<string, unknown>) => ToolCallPresentation;
   execute: (

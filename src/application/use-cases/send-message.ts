@@ -10,6 +10,7 @@ import {
   formatProcessListForUser,
   listProcesses,
 } from "../services/process-catalog.js";
+import { buildToolUsageText } from "../services/tool-usage-catalog.js";
 import {
   ProcessLifecycleError,
   cancelProcess,
@@ -107,12 +108,14 @@ export class SendMessageUseCase {
       );
 
     const currentDocument = await refreshCurrentDocument();
+    const toolUsage = buildToolUsageText(this.deps.runtime.specRegistry);
     const systemContext = this.contextBuilder.buildAgentContext(
       {
         baseInstruction: this.deps.runtime.baseInstruction,
         modeSpec,
         processIndex: processContext.processIndex,
         activeProcessSpec: processContext.activeProcessSpec,
+        toolUsage,
         currentDocument,
       },
       refreshCurrentDocument,

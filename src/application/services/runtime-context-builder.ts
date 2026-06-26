@@ -7,6 +7,7 @@ export type RuntimeContextInput = {
   modeSpec: SpecDocument;
   processIndex: string;
   activeProcessSpec?: SpecDocument;
+  toolUsage?: string;
   currentDocument?: CurrentDocumentContext;
 };
 
@@ -32,6 +33,10 @@ export class RuntimeContextBuilder {
         "## Available Processes",
         input.processIndex.trim(),
       );
+    }
+
+    if (input.toolUsage && input.toolUsage.trim().length > 0) {
+      systemParts.push("", "## Tool Usage", input.toolUsage.trim());
     }
 
     if (input.currentDocument) {
