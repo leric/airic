@@ -144,6 +144,7 @@ function createPiTool(
       const result = await handler(input.session, args, {
         toolCallId,
         permissionGate: input.permissionGate,
+        historyPermissionGate: input.historyPermissionGate,
         signal,
         onUpdate: onUpdate
           ? (update) =>

@@ -1,5 +1,6 @@
 import type { TranscriptMessage } from "../../domain/agent/transcript.js";
 import type { PendingEdit } from "../../domain/tool/pending-edit.js";
+import type { PendingHistoryChange } from "../../domain/tool/pending-history-change.js";
 import type { AiricConfig } from "./config-loader-port.js";
 import type {
   KernelToolRegistryPort,
@@ -34,6 +35,13 @@ export type EditPermissionGate = (
   toolCallId: string,
 ) => Promise<"allow" | "reject">;
 
+export type HistoryPermissionGate = (
+  change: PendingHistoryChange,
+  toolCallId: string,
+) => Promise<"allow" | "reject">;
+
+export type MutationPermissionGate = EditPermissionGate | HistoryPermissionGate;
+
 export type AgentSystemContext = {
   systemPrompt: string;
   refreshSystemPrompt: () => Promise<string>;
@@ -48,6 +56,7 @@ export type AgentTurnInput = {
   session: import("../../domain/session/session.js").Session;
   tools: KernelToolRegistryPort;
   permissionGate?: EditPermissionGate;
+  historyPermissionGate?: HistoryPermissionGate;
   signal?: AbortSignal;
   onEvent: (event: AgentRuntimeEvent) => Promise<void>;
 };

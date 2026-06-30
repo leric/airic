@@ -11,6 +11,11 @@ export const KERNEL_TOOL_NAMES = {
   PROCESS_CANCEL: "process.cancel",
   PROCESS_STATUS: "process.status",
   PROCESS_LIST: "process.list",
+  HISTORY_MOVE_CURSOR: "history.move_cursor",
+  HISTORY_SUMMARIZE: "history.summarize",
+  HISTORY_READ_TREE: "history.read_tree",
+  HISTORY_READ_NODE: "history.read_node",
+  HISTORY_MARK: "history.mark",
 } as const;
 
 export type KernelToolName =

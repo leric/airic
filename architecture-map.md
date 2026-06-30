@@ -1,6 +1,6 @@
 # Architecture Map — Airic
 
-- Last updated: 2026-06-25
+- Last updated: 2026-06-30
 - Architectural decision owners: project maintainers (human review for new ports, use cases, owned concepts)
 
 ## Layer layout
@@ -20,7 +20,7 @@
 
 | Use case | Purpose | Location | Ports used | Key entities |
 |---|---|---|---|---|
-| Send message | Run one agent turn with tools; dispatch slash commands (`/tree`, `/process …`) | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root) | Session, TurnNode, ProcessInstance |
+| Send message | Run one agent turn with tools; dispatch slash commands (`/tree`, `/cursor`, `/summarize`, `/mark`, `/process …`) | `use-cases/send-message.ts` | AgentRuntimePort, SessionStorePort, KernelToolRegistryPort (required, wired at composition root), SummarizationPort (slash summarize) | Session, TurnNode, ProcessInstance |
 | Select mode | Switch session thinking mode via ACP `session/set_mode` | `use-cases/select-mode.ts` | SessionStorePort, WorkspaceRuntime (specRegistry) | Session |
 | Propose / apply edit | User-confirmed file mutation | `use-cases/file-editing.ts` | FileSystemPort, SessionStorePort | PendingEdit |
 | Bootstrap workspace | Initialize `.airic/` layout | `use-cases/bootstrap-workspace.ts` | FileSystemPort | — |
@@ -40,7 +40,7 @@
 
 ## Tool layer routing
 
-Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`, `process.start`, `process.complete`, `process.cancel`, `process.status`, `process.list`.
+Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`, `process.start`, `process.complete`, `process.cancel`, `process.status`, `process.list`, `history.move_cursor`, `history.summarize`, `history.read_tree`, `history.read_node`, `history.mark`.
 
 | Concern | Owner | Location |
 |---|---|---|
@@ -87,7 +87,7 @@ Do **not** modify `ToolExecutor` or `KernelToolRegistry` when adding a standard 
 - New tool → `create*Tool()` factory + register in `createDefaultToolRegistry()`.
 - Wire runtime → `createKernelToolStack(deps)` at composition root only (`interfaces/acp/acp-adapter.ts`). Use cases must not import infrastructure factories.
 - Workspace path resolution → `domain/path/workspace-path.ts`.
-- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path only; sibling branches and `toolTrace` excluded). System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + process index or active process spec + always-resident Tool Usage + current document).
+- Session history → turn tree in `domain/session/turn-tree.ts`; model context uses `projectCursorPath()` (active cursor path with summary replacement; sibling branches and `toolTrace` excluded). History navigation/summary/mark via `history.*` tools + `HistoryLifecycle` + `AnchorResolver`. Audit: `.airic/logs/history.log`. System prompt only → `RuntimeContextBuilder` (base instruction + active mode spec + process index or active process spec + always-resident Tool Usage + current document).
 - Tool usage docs → `core.tool` specs in `packs/core/tool/`. Loaded by `WorkspaceRuntimeLoader` into `SpecRegistry`. Injected via `tool-usage-catalog.ts` → `RuntimeContextBuilder` `## Tool Usage` section. One-to-one binding via frontmatter `tool:`; sync guard: `tests/tool-usage-catalog.test.ts` (every `ALL_KERNEL_TOOL_NAMES` entry has a doc). Cross-tool creative usage stays in mode/process prose.
 - Available modes → `application/services/mode-catalog.ts` (`listAvailableModes` from spec registry `core.mode` docs). ACP `session/new` returns `modes`; `session/set_mode` → `SelectModeUseCase`.
 - Process lifecycle → `application/services/process-lifecycle.ts` (start / complete / cancel / status on `Session`). Discovery/index → `application/services/process-catalog.ts`. User slash commands → `domain/session/session-command.ts` + `SendMessageUseCase.handleProcess`. Agent tools → `infrastructure/tools/process/`. Spec: [docs/kernel-tdd.md](docs/kernel-tdd.md) §12.

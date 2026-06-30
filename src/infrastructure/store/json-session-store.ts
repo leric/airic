@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { SessionStorePort } from "../../application/ports/session-store-port.js";
 import type { FileSystemPort } from "../../application/ports/file-system-port.js";
+import { ensureSessionTree } from "../../domain/session/ensure-session-tree.js";
 import type { Session } from "../../domain/session/session.js";
 
 export class JsonSessionStore implements SessionStorePort {
@@ -22,13 +23,7 @@ export class JsonSessionStore implements SessionStorePort {
 
     const raw = await this.fs.readText(path);
     const session = JSON.parse(raw) as Session;
-    // Turn-tree defaults on load. In-memory sibling: ensureSessionTree() in domain/session/.
-    if (!session.turns) {
-      session.turns = {};
-    }
-    if (!session.processInstances) {
-      session.processInstances = {};
-    }
+    ensureSessionTree(session);
     return session;
   }
 

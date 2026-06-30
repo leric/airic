@@ -18,7 +18,22 @@ export function listAvailableSlashCommands(
   return [
     {
       name: "tree",
-      description: "Show the current session turn tree.",
+      description: "Show the current session turn tree outline.",
+    },
+    {
+      name: "cursor",
+      description: "Move the session cursor to an anchor.",
+      inputHint: "parent | root | nearest-fork | label:<name> | <node-id-prefix>",
+    },
+    {
+      name: "summarize",
+      description: "Summarize the current side branch or path segment.",
+      inputHint: "<prompt>",
+    },
+    {
+      name: "mark",
+      description: "Label the current cursor node for later anchor references.",
+      inputHint: "<name>",
     },
     {
       name: "process",

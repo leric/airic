@@ -1,21 +1,39 @@
 import type { TranscriptMessage } from "../agent/transcript.js";
 
-export type TurnKind = "normal";
+export type EntryKind = "message" | "summary" | "extension";
+
+/** @deprecated Use EntryKind. Kept for JSON migration from legacy sessions. */
+export type TurnKind = EntryKind | "normal";
+
+export type SummaryMeta = {
+  source: { fromId: string; toId: string };
+  replacesRange: boolean;
+  prompt: string;
+  producedText: string;
+};
 
 export type TurnNode = {
   id: string;
   parentId?: string;
 
-  userMessage: string;
-  assistantMessage: string;
-
-  title: string;
-  summary?: string;
-
-  /** Full turn slice incl. tool calls/results. Stored for replay/export; excluded from default model context via `projectCursorPath()`. */
+  /** message nodes */
+  userMessage?: string;
+  assistantMessage?: string;
   toolTrace?: TranscriptMessage[];
 
-  kind: TurnKind;
+  title: string;
+  /** Legacy one-line summary on message nodes; distinct from summary entry kind. */
+  summary?: string;
+
+  labels?: string[];
+
+  /** summary nodes */
+  summaryMeta?: SummaryMeta;
+
+  /** extension nodes — pack-defined opaque payload */
+  extensionPayload?: Record<string, unknown>;
+
+  kind: EntryKind;
   createdAt: string;
 };
 
@@ -33,4 +51,19 @@ export function generateTurnTitle(userMessage: string): string {
   }
 
   return `${trimmed.slice(0, MAX_TITLE_LENGTH - 1)}…`;
+}
+
+export function normalizeEntryKind(kind: TurnKind | undefined): EntryKind {
+  if (kind === "summary" || kind === "extension") {
+    return kind;
+  }
+  return "message";
+}
+
+export function isMessageNode(node: TurnNode): boolean {
+  return node.kind === "message";
+}
+
+export function isSummaryNode(node: TurnNode): boolean {
+  return node.kind === "summary";
 }

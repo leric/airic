@@ -11,6 +11,9 @@ export type ProcessCommandAction =
 export type SessionCommand =
   | { kind: "message"; text: string }
   | { kind: "tree" }
+  | { kind: "cursor"; anchorText: string }
+  | { kind: "summarize"; prompt: string }
+  | { kind: "mark"; name: string }
   | {
       kind: "process";
       action: ProcessCommandAction;
@@ -24,6 +27,23 @@ export function parseSessionCommand(text: string): SessionCommand {
 
   if (trimmed === "/tree") {
     return { kind: "tree" };
+  }
+
+  if (trimmed.startsWith("/cursor")) {
+    return {
+      kind: "cursor",
+      anchorText: trimmed.slice("/cursor".length).trim(),
+    };
+  }
+
+  if (trimmed.startsWith("/summarize")) {
+    const prompt = trimmed.slice("/summarize".length).trim();
+    return { kind: "summarize", prompt };
+  }
+
+  if (trimmed.startsWith("/mark")) {
+    const name = trimmed.slice("/mark".length).trim();
+    return { kind: "mark", name };
   }
 
   if (trimmed.startsWith("/process")) {

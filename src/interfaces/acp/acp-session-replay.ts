@@ -10,12 +10,12 @@ export async function replaySessionHistory(
   cx: acp.AgentContext,
 ): Promise<void> {
   for (const turn of cursorPath(session)) {
-    await notifyUserMessage(sessionId, turn.userMessage, cx);
+    await notifyUserMessage(sessionId, turn.userMessage ?? "", cx);
 
     if (turn.toolTrace?.length) {
       await replayToolTrace(sessionId, turn.toolTrace, cx);
     } else {
-      await notifyAgentMessage(sessionId, turn.assistantMessage, cx);
+      await notifyAgentMessage(sessionId, turn.assistantMessage ?? "", cx);
     }
   }
 }

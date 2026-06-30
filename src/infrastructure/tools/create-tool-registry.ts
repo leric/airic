@@ -17,6 +17,7 @@ export type ToolRegistryDeps = {
   fs: FileSystemPort;
   sessionStore: SessionStorePort;
   specRegistry: SpecRegistry;
+  historyTools?: AiricToolDefinition[];
 };
 
 /** New tools also need a `core.tool` usage doc — see architecture-map.md "Modification closure for a new tool". */
@@ -33,6 +34,7 @@ export function createDefaultToolRegistry(deps: ToolRegistryDeps): ToolRegistryP
       sessionStore: deps.sessionStore,
       specRegistry: deps.specRegistry,
     }),
+    ...(deps.historyTools ?? []),
   ];
   return new AiricToolRegistry(tools);
 }

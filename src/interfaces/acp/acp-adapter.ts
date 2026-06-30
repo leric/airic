@@ -16,7 +16,10 @@ import { EditStore } from "../../application/services/edit-store.js";
 import { EditLog } from "../../application/services/edit-log.js";
 import { OpenDocumentUseCase } from "../../application/use-cases/file-editing.js";
 import type { PendingEdit } from "../../domain/tool/pending-edit.js";
+import type { PendingHistoryChange } from "../../domain/tool/pending-history-change.js";
 import { PiAgentRuntime } from "../../infrastructure/agent/pi-agent-runtime.js";
+import { PiSummarizationAdapter } from "../../infrastructure/agent/pi-summarization-adapter.js";
+import { HistoryAuditLog } from "../../application/services/history-audit-log.js";
 import { PiModelResolver } from "../../infrastructure/agent/pi-model-resolver.js";
 import { DiffService } from "../../infrastructure/diff/diff-service.js";
 import { createKernelToolStack } from "../../infrastructure/tools/create-tool-runtime.js";
@@ -210,13 +213,19 @@ export class AcpAdapter {
       const runtime = await this.runtimeLoader.load(workspaceRoot);
       const sessionStore = this.sessionStoreFactory.forWorkspace(workspaceRoot);
       const editLog = new EditLog(this.fs, workspaceRoot);
+      const historyAuditLog = new HistoryAuditLog(this.fs, workspaceRoot);
+      const summarizationPort = new PiSummarizationAdapter(this.modelResolver);
       const kernelTools = createKernelToolStack({
+        workspaceRoot,
         fs: this.fs,
         sessionStore,
         specRegistry: runtime.specRegistry,
         diffService: new DiffService(),
         editStore: this.editStore,
         editLog,
+        llm: runtime.config.llm,
+        summarizationPort,
+        historyAuditLog,
       });
 
       const sendMessage = new SendMessageUseCase({
@@ -225,6 +234,8 @@ export class AcpAdapter {
         runtime,
         fs: this.fs,
         kernelTools,
+        summarizationPort,
+        historyAuditLog,
       });
 
       await sendMessage.execute({
@@ -236,6 +247,8 @@ export class AcpAdapter {
         },
         permissionGate: (edit, toolCallId) =>
           this.requestEditPermission(params.sessionId, cx, edit, toolCallId),
+        historyPermissionGate: (change, toolCallId) =>
+          this.requestHistoryPermission(params.sessionId, cx, change, toolCallId),
       });
     } catch (error) {
       if (sessionState.pendingPrompt.signal.aborted) {
@@ -340,6 +353,72 @@ export class AcpAdapter {
           {
             kind: "reject_once",
             name: "Reject edit",
+            optionId: "reject",
+          },
+        ],
+      },
+    );
+
+    if (response.outcome.outcome === "cancelled") {
+      return "reject";
+    }
+
+    return response.outcome.optionId === "allow" ? "allow" : "reject";
+  }
+
+  private async requestHistoryPermission(
+    sessionId: string,
+    cx: acp.AgentContext,
+    change: PendingHistoryChange,
+    toolCallId: string,
+  ): Promise<"allow" | "reject"> {
+    await cx.notify(acp.methods.client.session.update, {
+      sessionId,
+      update: {
+        sessionUpdate: "tool_call_update",
+        toolCallId,
+        status: "pending",
+        content: [
+          {
+            type: "content",
+            content: {
+              type: "text",
+              text: change.previewText,
+            },
+          },
+        ],
+        rawOutput: {
+          historyChangeId: change.id,
+          action: change.action,
+          preview: change.previewText,
+        },
+      },
+    });
+
+    const response = await cx.request(
+      acp.methods.client.session.requestPermission,
+      {
+        sessionId,
+        toolCall: {
+          toolCallId,
+          title: `Apply history.${change.action}`,
+          kind: "other",
+          status: "pending",
+          rawInput: {
+            historyChangeId: change.id,
+            action: change.action,
+            preview: change.previewText,
+          },
+        },
+        options: [
+          {
+            kind: "allow_once",
+            name: "Accept change",
+            optionId: "allow",
+          },
+          {
+            kind: "reject_once",
+            name: "Reject change",
             optionId: "reject",
           },
         ],

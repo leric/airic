@@ -3,6 +3,7 @@ import type { AiricToolContext } from "../../domain/tool/tool.js";
 import {
   requiresDiffConfirmation,
   requiresPolicyCheck,
+  requiresPreviewConfirmation,
 } from "../../domain/tool/tool.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import type { ToolPolicyPort } from "../ports/tool-policy-port.js";
@@ -14,10 +15,12 @@ import type {
   ToolExecutorPort,
 } from "../ports/tool-executor-port.js";
 import type { MutationCoordinator } from "./mutation-coordinator.js";
+import type { HistoryMutationCoordinator } from "./history-mutation-coordinator.js";
 
 export type ToolExecutorDeps = {
   registry: ToolRegistryPort;
   mutationCoordinator: MutationCoordinator;
+  historyMutationCoordinator?: HistoryMutationCoordinator;
   toolPolicy?: ToolPolicyPort;
 };
 
@@ -82,6 +85,31 @@ export class ToolExecutor implements ToolExecutorPort {
       );
     }
 
+    if (requiresPreviewConfirmation(tool)) {
+      const pendingId = findPendingHistoryChangeId(result);
+      if (!pendingId) {
+        throw new Error("Tool did not produce pending history change for confirmation");
+      }
+      if (!this.deps.historyMutationCoordinator) {
+        throw new Error("History mutation coordinator is not configured");
+      }
+      result = await this.deps.historyMutationCoordinator.confirmAndApply(
+        session,
+        pendingId,
+        {
+          toolCallId: ctx.toolCallId,
+          permissionGate: ctx.historyPermissionGate,
+          initiatedBy: "agent",
+        },
+        events,
+      );
+    }
+
     return result;
   }
+}
+
+function findPendingHistoryChangeId(result: AiricToolResult): string | undefined {
+  const id = result.details?.pendingHistoryChangeId;
+  return typeof id === "string" ? id : undefined;
 }

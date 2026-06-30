@@ -7,6 +7,7 @@ import { createDefaultToolRegistry } from "../src/infrastructure/tools/create-to
 import { NodeFileSystem } from "../src/infrastructure/fs/node-file-system.js";
 import {
   createNoopSessionStore,
+  createTestHistoryTools,
   createTestSpecRegistry,
 } from "./test-tool-deps.js";
 
@@ -16,6 +17,7 @@ function createTestKernelRegistry() {
     fs,
     sessionStore: createNoopSessionStore(),
     specRegistry: createTestSpecRegistry(),
+    historyTools: createTestHistoryTools(),
   });
   const executor = new ToolExecutor({
     registry,
@@ -68,6 +70,7 @@ describe("KernelToolRegistry", () => {
         fs,
         sessionStore: createNoopSessionStore(),
         specRegistry: createTestSpecRegistry(),
+        historyTools: createTestHistoryTools(),
       }).list(),
     );
 

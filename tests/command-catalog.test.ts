@@ -31,6 +31,9 @@ describe("listAvailableSlashCommands", () => {
 
     expect(commands.map((command) => command.name)).toEqual([
       "tree",
+      "cursor",
+      "summarize",
+      "mark",
       "process",
     ]);
 

@@ -7,7 +7,7 @@
 import type { Session } from "../../domain/session/session.js";
 import type { AiricToolResult } from "../../domain/tool/tool-result.js";
 import type { ToolCallPresentation } from "../../domain/tool/tool-presentation.js";
-import type { EditPermissionGate } from "../ports/agent-runtime-port.js";
+import type { EditPermissionGate, HistoryPermissionGate } from "../ports/agent-runtime-port.js";
 import type { ToolRegistryPort } from "../ports/tool-registry-port.js";
 import type { ToolExecutorPort } from "../ports/tool-executor-port.js";
 
@@ -17,6 +17,7 @@ export type KernelToolHandler = (
   ctx: {
     toolCallId: string;
     permissionGate?: EditPermissionGate;
+    historyPermissionGate?: HistoryPermissionGate;
     signal?: AbortSignal;
     onUpdate?: (update: AiricToolResult) => void;
   },
@@ -66,6 +67,10 @@ export class KernelToolRegistry implements KernelToolRegistryPort {
       return this.executor.execute(session, name, args, ctx, {
         onProposeEdit: ctx.permissionGate
           ? async (edit, toolCallId) => ctx.permissionGate!(edit, toolCallId)
+          : undefined,
+        onProposeHistoryChange: ctx.historyPermissionGate
+          ? async (change, toolCallId) =>
+              ctx.historyPermissionGate!(change, toolCallId)
           : undefined,
       });
     };

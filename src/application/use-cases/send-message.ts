@@ -1,6 +1,7 @@
 import type { AgentRuntimePort } from "../ports/agent-runtime-port.js";
 import type { FileSystemPort } from "../ports/file-system-port.js";
 import type { SessionStorePort } from "../ports/session-store-port.js";
+import type { SummarizationPort } from "../ports/summarization-port.js";
 import { RuntimeContextBuilder } from "../services/runtime-context-builder.js";
 import type { WorkspaceRuntime } from "../services/workspace-runtime-loader.js";
 import { loadCurrentDocumentContext } from "../services/current-document-context.js";
@@ -24,16 +25,26 @@ import {
 import type {
   AgentRuntimeEvent,
   EditPermissionGate,
+  HistoryPermissionGate,
 } from "../ports/agent-runtime-port.js";
+import { parseAnchorText } from "../../domain/session/anchor.js";
 import { ensureSessionTree } from "../../domain/session/ensure-session-tree.js";
 import { parseSessionCommand } from "../../domain/session/session-command.js";
 import type { SessionCommand } from "../../domain/session/session-command.js";
 import type { Session } from "../../domain/session/session.js";
+import { appendTurn, projectCursorPath } from "../../domain/session/turn-tree.js";
 import {
-  appendTurn,
-  projectCursorPath,
-  renderTree,
-} from "../../domain/session/turn-tree.js";
+  AnchorError,
+  applyHistoryChange,
+  buildMarkProposal,
+  buildSummarizeProposal,
+  formatAnchorError,
+  formatReadTree,
+  HistoryLifecycleError,
+  mergeHistoryState,
+  moveCursor,
+} from "../services/history-lifecycle.js";
+import type { HistoryAuditLog } from "../services/history-audit-log.js";
 
 export type SendMessageInput = {
   sessionId: string;
@@ -41,6 +52,7 @@ export type SendMessageInput = {
   signal?: AbortSignal;
   onEvent: (event: AgentRuntimeEvent) => Promise<void>;
   permissionGate?: EditPermissionGate;
+  historyPermissionGate?: HistoryPermissionGate;
 };
 
 export type SendMessageDeps = {
@@ -50,6 +62,8 @@ export type SendMessageDeps = {
   fs: FileSystemPort;
   kernelTools: KernelToolRegistryPort;
   contextBuilder?: RuntimeContextBuilder;
+  summarizationPort?: SummarizationPort;
+  historyAuditLog?: HistoryAuditLog;
 };
 
 export class SendMessageUseCase {
@@ -72,6 +86,12 @@ export class SendMessageUseCase {
     switch (command.kind) {
       case "tree":
         return this.handleTree(session, input);
+      case "cursor":
+        return this.handleHistoryCursor(session, command, input);
+      case "summarize":
+        return this.handleHistorySummarize(session, command, input);
+      case "mark":
+        return this.handleHistoryMark(session, command, input);
       case "process":
         return this.handleProcess(session, command, input);
       default:
@@ -120,14 +140,15 @@ export class SendMessageUseCase {
       session,
       tools: this.deps.kernelTools,
       permissionGate: input.permissionGate,
+      historyPermissionGate: input.historyPermissionGate,
       signal: input.signal,
       onEvent: input.onEvent,
     });
 
     const reloaded = await this.deps.sessionStore.get(input.sessionId);
     if (reloaded) {
-      // process.* tools load-mutate-save via sessionStore; merge before appendTurn save.
       mergeProcessState(session, reloaded);
+      mergeHistoryState(session, reloaded);
     }
 
     appendTurn(session, {
@@ -242,12 +263,144 @@ export class SendMessageUseCase {
   }
 
   private async handleTree(
-    session: Awaited<ReturnType<SessionStorePort["get"]>> & {},
+    session: Session,
     input: SendMessageInput,
   ): Promise<string> {
-    const response = renderTree(session);
+    const response = formatReadTree(session);
     await this.emitDirectResponse(response, input.onEvent);
     return response;
+  }
+
+  private async handleHistoryCursor(
+    session: Session,
+    command: Extract<SessionCommand, { kind: "cursor" }>,
+    input: SendMessageInput,
+  ): Promise<string> {
+    let response: string;
+
+    try {
+      const anchor = parseAnchorText(command.anchorText);
+      if (!anchor) {
+        response = "Usage: /cursor <anchor>";
+      } else {
+        const node = moveCursor(session, anchor);
+        session.updatedAt = new Date().toISOString();
+        await this.deps.sessionStore.save(session);
+        await this.appendHistoryAudit(session.id, "move_cursor", [node.id], {
+          anchor: command.anchorText,
+        });
+        response = `Cursor moved to ${node.title} (${node.id.slice(0, 8)}).`;
+      }
+    } catch (error) {
+      response =
+        error instanceof AnchorError
+          ? formatAnchorError(error)
+          : error instanceof Error
+            ? error.message
+            : "Cursor command failed.";
+    }
+
+    await this.emitDirectResponse(response, input.onEvent);
+    return response;
+  }
+
+  private async handleHistorySummarize(
+    session: Session,
+    command: Extract<SessionCommand, { kind: "summarize" }>,
+    input: SendMessageInput,
+  ): Promise<string> {
+    let response: string;
+
+    try {
+      if (!this.deps.summarizationPort) {
+        throw new HistoryLifecycleError("Summarization is not configured.");
+      }
+      if (!command.prompt) {
+        response = "Usage: /summarize <prompt>";
+      } else {
+        const proposal = await buildSummarizeProposal(
+          session,
+          { prompt: command.prompt, moveCursor: true },
+          this.deps.summarizationPort,
+          this.deps.runtime.config.llm,
+          input.signal,
+        );
+        applyHistoryChange(session, proposal.applyPayload);
+        session.updatedAt = new Date().toISOString();
+        await this.deps.sessionStore.save(session);
+        await this.appendHistoryAudit(session.id, "summarize", proposal.resolvedNodeIds, {
+          prompt: command.prompt,
+        });
+        response = proposal.previewText;
+      }
+    } catch (error) {
+      response =
+        error instanceof AnchorError
+          ? formatAnchorError(error)
+          : error instanceof HistoryLifecycleError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "Summarize command failed.";
+    }
+
+    await this.emitDirectResponse(response, input.onEvent);
+    return response;
+  }
+
+  private async handleHistoryMark(
+    session: Session,
+    command: Extract<SessionCommand, { kind: "mark" }>,
+    input: SendMessageInput,
+  ): Promise<string> {
+    let response: string;
+
+    try {
+      if (!command.name) {
+        response = "Usage: /mark <name>";
+      } else {
+        const proposal = buildMarkProposal(session, { name: command.name });
+        applyHistoryChange(session, proposal.applyPayload);
+        session.updatedAt = new Date().toISOString();
+        await this.deps.sessionStore.save(session);
+        await this.appendHistoryAudit(session.id, "mark", proposal.resolvedNodeIds, {
+          name: command.name,
+        });
+        response = proposal.previewText;
+      }
+    } catch (error) {
+      response =
+        error instanceof AnchorError
+          ? formatAnchorError(error)
+          : error instanceof HistoryLifecycleError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "Mark command failed.";
+    }
+
+    await this.emitDirectResponse(response, input.onEvent);
+    return response;
+  }
+
+  private async appendHistoryAudit(
+    sessionId: string,
+    action: "move_cursor" | "summarize" | "mark",
+    resolvedNodes: string[],
+    params: Record<string, unknown>,
+  ): Promise<void> {
+    if (!this.deps.historyAuditLog) {
+      return;
+    }
+
+    await this.deps.historyAuditLog.append({
+      timestamp: new Date().toISOString(),
+      sessionId,
+      action,
+      initiatedBy: "user",
+      params,
+      resolvedNodes,
+    });
   }
 
   private async emitDirectResponse(

@@ -21,7 +21,7 @@ export type AiricToolUpdate = {
 };
 
 export type AiricToolPolicy = "none" | "mutating";
-export type AiricToolConfirmation = "none" | "diff";
+export type AiricToolConfirmation = "none" | "diff" | "preview";
 
 export type AiricToolDefinition = {
   name: string;
@@ -46,4 +46,8 @@ export function requiresPolicyCheck(tool: AiricToolDefinition): boolean {
 
 export function requiresDiffConfirmation(tool: AiricToolDefinition): boolean {
   return tool.confirmation === "diff";
+}
+
+export function requiresPreviewConfirmation(tool: AiricToolDefinition): boolean {
+  return tool.confirmation === "preview";
 }
