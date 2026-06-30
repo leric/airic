@@ -274,6 +274,8 @@ user files. When the ACP client opens or focuses such a file, the kernel:
 2. Reads the file and parses frontmatter.
 3. If `doc_type` resolves to a registered spec, loads that document-type spec into context.
 
+The agent can trigger the same flow via the `document.focus` tool (shared `setActiveDocument` service).
+
 ---
 
 ## 8. Session Model
@@ -444,6 +446,8 @@ bash(command, timeout?)
 ```
 
 Process tools: `process.start`, `process.complete`, `process.cancel`.
+
+Document tools: `document.focus`.
 
 ### Contract vs usage
 

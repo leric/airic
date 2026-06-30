@@ -18,4 +18,4 @@ Distill a history range into a summary node. Use it to fold a side branch back i
 
 - Always provide `prompt` (how to summarize).
 - Never guess node ids — use anchors or read the tree first.
-- Original nodes are preserved; use `history.read_node` to recover details.
+- Original nodes are preserved on disk and in session state; they are no longer agent-recoverable via a tool once folded.

@@ -24,11 +24,11 @@ Run it at a natural boundary, while the trajectory is still fresh — after a me
 
 ### Input
 
-The session's actual trajectory: the conversation path with its branches and returns, where the user corrected or redirected the agent, which mode or process was active, which documents and context the agent used or struggled to find, and where it over-structured, under-structured, or misread intent.
+The session's actual trajectory: the conversation path from root to the current cursor, where the user corrected or redirected the agent, which mode or process was active, which documents and context the agent used or struggled to find, and where it over-structured, under-structured, or misread intent. Sibling branches the agent explored but moved away from are not in context.
 
 ### Method
 
-1. **Reconstruct the actual process.** Describe what the agent did, not what it should have done — where it looked, what it tried, where it was corrected, where things flowed. Work from what is already in context; the whole trace is here. This step does not re-read files or fetch a session log — it is observation, recall, reflect, and summary, not new retrieval.
+1. **Reconstruct the actual process.** Describe what the agent did, not what it should have done — where it looked, what it tried, where it was corrected, where things flowed. The conversation path is in context; tool-call details from earlier turns are not, so re-read workspace files only when needed to recover what actually happened. Do not go looking for session logs, transcript files, or `.airic/logs/` to reconstruct history — the conversation is already in context. This is observation, recall, and reflection, not new work or open-ended retrieval.
 2. **Mark what worked.** Name the moves that helped the user think and the calls that landed well. Reflection is not only fault-finding; good moves are worth reinforcing.
 3. **Mark the friction.** Name derailments, over-structuring, premature execution, missed intent, wasted turns, or context pollution.
 4. **Attribute each to a cause.** For every win and friction, ask why. Distinguish a methodology gap (a mode, process, or document type that was unclear or missing), a workspace or context gap (information hard to find, a missing precedent), agent behavior (available signals ignored, shortcuts taken), and genuine ambiguity. The attribution matters more than the symptom.

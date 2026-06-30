@@ -1,19 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { FileSystemPort } from "../ports/file-system-port.js";
 import type { SessionStorePort } from "../ports/session-store-port.js";
+import type { CurrentDocumentContext } from "../services/current-document-context.js";
+import { setActiveDocument } from "../services/document-focus.js";
 import { PathResolver } from "../services/path-resolver.js";
-import { parseMarkdownFrontmatter } from "../../infrastructure/markdown/frontmatter-parser.js";
-import { resolveDocumentTypeSpec } from "../services/document-type-resolver.js";
-import type { SpecDocument } from "../../domain/spec/spec-document.js";
 import type { WorkspaceRuntime } from "../services/workspace-runtime-loader.js";
 
-export type OpenDocumentResult = {
-  path: string;
-  relativePath: string;
-  content: string;
-  docType?: string;
-  documentTypeSpec?: SpecDocument;
-};
+export type OpenDocumentResult = CurrentDocumentContext;
 
 export type OpenDocumentDeps = {
   fs: FileSystemPort;
@@ -30,31 +23,14 @@ export class OpenDocumentUseCase {
       throw new Error(`Session not found: ${sessionId}`);
     }
 
-    const pathResolver = new PathResolver(session.workspaceRoot);
-    const path = pathResolver.resolve(documentPath);
-    const content = await this.deps.fs.readText(path);
-    const parsed = parseMarkdownFrontmatter(content);
-
-    const docType =
-      typeof parsed.frontmatter.doc_type === "string"
-        ? parsed.frontmatter.doc_type
-        : undefined;
-
-    const documentTypeSpec = docType
-      ? resolveDocumentTypeSpec(docType, this.deps.runtime.specRegistry)
-      : undefined;
-
-    session.currentDocument = path;
-    session.updatedAt = new Date().toISOString();
+    const result = await setActiveDocument(
+      this.deps.fs,
+      session,
+      this.deps.runtime.specRegistry,
+      documentPath,
+    );
     await this.deps.sessionStore.save(session);
-
-    return {
-      path,
-      relativePath: pathResolver.toRelative(path),
-      content,
-      docType,
-      documentTypeSpec,
-    };
+    return result;
   }
 }
 

@@ -9,10 +9,10 @@ export const KERNEL_TOOL_NAMES = {
   PROCESS_START: "process.start",
   PROCESS_COMPLETE: "process.complete",
   PROCESS_CANCEL: "process.cancel",
+  DOCUMENT_FOCUS: "document.focus",
   HISTORY_MOVE_CURSOR: "history.move_cursor",
   HISTORY_SUMMARIZE: "history.summarize",
   HISTORY_READ_TREE: "history.read_tree",
-  HISTORY_READ_NODE: "history.read_node",
   HISTORY_MARK: "history.mark",
 } as const;
 

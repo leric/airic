@@ -12,6 +12,7 @@ import { createLsTool } from "./file/ls-tool.js";
 import { createReadTool } from "./file/read-tool.js";
 import { createWriteTool } from "./file/write-tool.js";
 import { createProcessTools } from "./process/create-process-tools.js";
+import { createDocumentTools } from "./document/create-document-tools.js";
 
 export type ToolRegistryDeps = {
   fs: FileSystemPort;
@@ -31,6 +32,11 @@ export function createDefaultToolRegistry(deps: ToolRegistryDeps): ToolRegistryP
     createWriteTool(),
     createBashTool(),
     ...createProcessTools({
+      sessionStore: deps.sessionStore,
+      specRegistry: deps.specRegistry,
+    }),
+    ...createDocumentTools({
+      fs: deps.fs,
       sessionStore: deps.sessionStore,
       specRegistry: deps.specRegistry,
     }),

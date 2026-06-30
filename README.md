@@ -188,6 +188,7 @@ your-project/
 | `write` | Create or overwrite files (user confirms before write) |
 | `bash` | Run a shell command in the workspace |
 | `process.start` / `process.complete` / `process.cancel` | Process workflow lifecycle |
+| `document.focus` | Set or clear the focused document (loads its doc_type spec) |
 
 When `editing.require_confirmation` is true, `edit` and `write` produce reviewable diffs in the client; accepted changes are logged to `.airic/logs/edits.log`.
 

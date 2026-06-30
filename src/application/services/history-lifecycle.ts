@@ -2,7 +2,6 @@ import type { Anchor } from "../../domain/session/anchor.js";
 import type { Session } from "../../domain/session/session.js";
 import type { TurnNode } from "../../domain/session/turn-node.js";
 import type { SummaryMeta } from "../../domain/session/turn-node.js";
-import type { TranscriptMessage } from "../../domain/agent/transcript.js";
 import type { AiricConfig } from "../ports/config-loader-port.js";
 import type { SummarizationPort } from "../ports/summarization-port.js";
 import type {
@@ -66,19 +65,6 @@ export type TreeOutlineEntry = {
   oneLineSummary: string;
   labels: string[];
   isOnCursorPath: boolean;
-};
-
-export type ReadNodeResult = {
-  nodeId: string;
-  kind: TurnNode["kind"];
-  title: string;
-  labels: string[];
-  userMessage?: string;
-  assistantMessage?: string;
-  summaryMeta?: TurnNode["summaryMeta"];
-  extensionPayload?: TurnNode["extensionPayload"];
-  toolTrace?: TranscriptMessage[];
-  createdAt: string;
 };
 
 export type ReadTreeOptions = {
@@ -157,22 +143,6 @@ export function formatReadTree(session: Session, options: ReadTreeOptions = {}):
       return `${entry.shortHandle} ${entry.kind} "${entry.oneLineSummary}"${labels}${pathMark}`;
     })
     .join("\n");
-}
-
-export function readNode(session: Session, ref: Anchor): ReadNodeResult {
-  const node = resolveAnchorOrThrow(session, ref);
-  return {
-    nodeId: node.id,
-    kind: node.kind,
-    title: node.title,
-    labels: node.labels ?? [],
-    userMessage: node.userMessage,
-    assistantMessage: node.assistantMessage,
-    summaryMeta: node.summaryMeta,
-    extensionPayload: node.extensionPayload,
-    toolTrace: node.toolTrace,
-    createdAt: node.createdAt,
-  };
 }
 
 export function tryResolveAnchor(session: Session, anchor: Anchor) {
