@@ -6,57 +6,45 @@ title: Precedent
 
 # Precedent
 
-A precedent preserves reusable human judgment from a concrete case.
+A precedent preserves reusable human judgment from a concrete case. It is not a generic rule; it is judgment extracted from an actual situation, carrying its context, rationale, scope, and limits. Precedents let future agents act with better judgment without re-asking the user to resolve the same kind of issue.
 
-A precedent is not a generic rule. It is judgment extracted from an actual situation, with its context, rationale, scope, and limits.
+### Purpose
 
-Precedents help future agents act with better judgment without repeatedly asking the user to resolve the same kind of issue.
-
-## Purpose
-
-Use a precedent when a human judgment may apply beyond the current case.
-
-A good precedent helps the agent understand:
+Use a precedent when a human judgment may apply beyond the case that produced it. A good precedent helps the agent understand:
 
 - what happened
 - what judgment was made
-- why that judgment was made
+- why it was made
 - when similar judgment should apply again
-- when it should not apply
+- when it should not
 
-## What a Precedent Should Contain
+### What an instance should contain
 
-A precedent should clarify:
+A precedent should make clear:
 
-- source case
-- judgment
-- rationale
-- relevant context
-- scope of applicability
-- limits
+- source case — the concrete situation it came from
+- judgment — what was decided
+- rationale — why
+- relevant context, and related documents or events
+- scope of applicability, and its limits
 - counterexamples
-- related documents or events
-- how future agents should use it
+- how a future agent should apply it, and when to surface the case back to the user instead
 
-The source case matters. Without a concrete case, the precedent becomes detached advice.
+A precedent without a concrete source case is detached advice. Its boundary — when *not* to apply it — matters as much as the judgment itself, since that is what keeps a future agent from misapplying it silently.
 
-## What a Precedent Should Avoid
+### What an instance should avoid
 
-A precedent should not become an abstract slogan.
+- becoming an abstract slogan
+- overgeneralizing from one case
+- erasing the uncertainty, tradeoffs, or conditions that shaped the judgment
+- overriding human judgment when the new situation is materially different
 
-It should not overgeneralize from one case.
-
-It should not erase uncertainty, tradeoffs, or conditions.
-
-It should not override human judgment when the new situation is materially different.
-
-## Editing Guidance
-
-When editing a precedent document:
+### Editing guidance
 
 - preserve the concrete source case
 - separate judgment from rationale
 - make scope and limits explicit
 - include counterexamples when useful
-- avoid making the rule broader than the evidence supports
-- make clear how future agents should apply or question the precedent
+- keep the rule no broader than the evidence supports
+- make clear how future agents should apply or question it
+- let a precedent be revised or superseded when judgment changes — it is durable, not frozen

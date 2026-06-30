@@ -6,59 +6,50 @@ title: Process
 
 # Process
 
-A process defines a concrete, repeatable method.
+A process defines a concrete, repeatable method, appropriate when the work has a recognizable trigger, input, steps, output, and exit condition. It is not a broad thinking posture.
 
-A process is appropriate when the work has a recognizable trigger, input, steps, output, and exit condition.
+### Purpose
 
-A process is not a broad thinking state.
+Use a process when the agent should follow a specific method rather than only a general posture. A good process tells the agent when to start, what input is needed, what steps to follow, what to produce, when to stop, and how to handle ambiguity or blockers.
 
-## Purpose
+### Required frontmatter (on each instance)
 
-Use a process when the agent should follow a specific method rather than only a general posture.
+- `id`: unique identifier, e.g. `core.process.session-reflection`.
+- `doc_type`: must be `core.process`.
+- `title`: human-readable name.
+- `summary`: one line describing what the process does.
+- `triggers`: signals or situations when this process is worth starting.
+- `activation`: `manual` (only the user starts it) or `suggested` (the agent may start it, but activation is always visible).
+- `outputs` (optional): the document types or artifacts the process produces, e.g. `core.task` or `core.precedent`.
 
-A good process helps the agent know:
+### How it loads
 
-- when to start
-- what input is needed
-- what steps to follow
-- what output to produce
-- when to stop
-- how to handle ambiguity or blockers
+Loading is two-tier, to keep ordinary conversation cheap:
 
-## What a Process Should Contain
+- **Inactive** → only the frontmatter index (`id` / `summary` / `triggers` / `activation`) is resident, under `## Available Processes`. Keep these fields tight; they are always loaded.
+- **Active** → the full body is injected as `## Active Process`, and the index entry disappears.
 
-A process document should define:
+At most one process is active at a time. The kernel manages the lifecycle (start / complete / cancel); a process refines the active mode, never replaces it.
 
-- trigger
+### What an instance's body should contain
+
+- trigger and preconditions
 - input
-- preconditions
 - steps
 - output
 - exit condition
 - failure or blocker handling
-- how the result should be written back or handed off
+- how the result is written back or handed off
 
-The process should be concrete enough that another agent can follow it consistently.
+The body should be concrete enough that another agent can follow it consistently.
 
-## What a Process Should Avoid
+### What an instance should avoid
 
-A process should not describe a vague attitude or default posture.
+Do not write a process for a vague posture — deep focus, general discussion, being helpful, thinking carefully. Those belong in a mode or the base instruction.
 
-Avoid process definitions for things like:
+Do not let a process take over user judgment. Where a step needs human judgment, surface that boundary rather than hide it.
 
-- deep focus
-- general discussion
-- being helpful
-- capturing decisions in the abstract
-- thinking carefully
-
-Those belong in a mode or base instruction.
-
-A process should also avoid taking over user judgment. If a step requires human judgment, the process should surface that boundary rather than hide it.
-
-## Editing Guidance
-
-When editing a process document:
+### Editing guidance
 
 - make triggers and outputs explicit
 - remove vague steps that cannot be followed

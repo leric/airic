@@ -187,7 +187,7 @@ your-project/
 | `edit` | Exact oldText → newText replacements (user confirms before write) |
 | `write` | Create or overwrite files (user confirms before write) |
 | `bash` | Run a shell command in the workspace |
-| `process.start` / `process.complete` / `process.cancel` / `process.status` / `process.list` | Process workflow lifecycle |
+| `process.start` / `process.complete` / `process.cancel` | Process workflow lifecycle |
 
 When `editing.require_confirmation` is true, `edit` and `write` produce reviewable diffs in the client; accepted changes are logged to `.airic/logs/edits.log`.
 

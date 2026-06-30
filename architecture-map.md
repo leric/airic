@@ -40,7 +40,7 @@
 
 ## Tool layer routing
 
-Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`, `process.start`, `process.complete`, `process.cancel`, `process.status`, `process.list`, `history.move_cursor`, `history.summarize`, `history.read_tree`, `history.read_node`, `history.mark`.
+Agent-facing tool names: `read`, `ls`, `find`, `grep`, `edit`, `write`, `bash`, `process.start`, `process.complete`, `process.cancel`, `history.move_cursor`, `history.summarize`, `history.read_tree`, `history.read_node`, `history.mark`.
 
 | Concern | Owner | Location |
 |---|---|---|

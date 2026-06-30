@@ -411,8 +411,8 @@ Processes are markdown-defined but lifecycle-managed by the kernel.
   spec-kind definition itself).
 - **User commands** — `/process` (= `list`), `/process list`, `/process start <id>`,
   `/process status`, `/process complete`, `/process cancel [reason]`.
-- **Agent tools** — `process.start`, `process.complete`, `process.cancel`, `process.status`,
-  `process.list`. Agent-started processes respect activation policy: a `manual` process
+- **Agent tools** — `process.start`, `process.complete`, `process.cancel`.
+  Agent-started processes respect activation policy: a `manual` process
   cannot be started by the agent.
 - **State** — starting a process creates a `ProcessInstance` and sets it active; the full
   spec is then loaded into context. Completing or cancelling clears the active process and
@@ -443,8 +443,7 @@ write(path, content)     # create/overwrite; requires confirmation
 bash(command, timeout?)
 ```
 
-Process tools: `process.start`, `process.complete`, `process.cancel`, `process.status`,
-`process.list`.
+Process tools: `process.start`, `process.complete`, `process.cancel`.
 
 ### Contract vs usage
 

@@ -5,7 +5,7 @@ title: Precedent Extraction
 summary: Extract reusable human judgment from a concrete case.
 triggers:
   - user makes a judgment that may apply again
-  - repeated decision pattern appears
+  - a recurring decision pattern appears
   - an agent correction reveals a reusable rule
   - review identifies a repeated failure mode
 outputs:
@@ -15,109 +15,41 @@ activation: suggested
 
 # Precedent Extraction
 
-Precedent Extraction turns a concrete human judgment into a reusable precedent.
+Precedent Extraction turns a concrete human judgment into a reusable `core.precedent`. Run it when a judgment made in one case is likely to help future agents handle similar cases with less supervision. A precedent stays anchored to the concrete case that produced it.
 
-Use this process when a judgment made in one case may help future agents handle similar cases with less supervision.
+### When to start
 
-A precedent is not a generic rule. It must remain anchored to the concrete case that produced it.
+Start when reuse seems likely — a judgment, a recurring decision pattern, an agent correction, or a review finding looks like it will recur, or the user asks to record a precedent.
 
-## Trigger
+Preconditions: there is a concrete source case. Without one, do not extract yet. Reserve this for judgments worth reusing rather than running it for every decision.
 
-Start this process when:
+### Input
 
-- the user makes a judgment that may apply again
-- a recurring decision pattern appears
-- an agent needed human judgment for a case that is likely to recur
-- a review reveals a repeated failure or correction
-- the user explicitly asks to record a precedent
+The concrete case and the judgment made, its reason, the surrounding context, the tradeoff or ambiguity involved, and any related documents, tasks, events, or examples.
 
-Do not start this process for every decision. Use it only when reuse seems likely.
+### Method
 
-## Input
+1. **Identify the source case.** Describe the actual situation that produced the judgment. Keep it concrete; resist abstracting early.
+2. **State the judgment.** What the user decided, preferred, rejected, corrected, or approved — separate from the reasoning.
+3. **Explain the rationale.** Why the judgment was made: the tradeoff, value, constraint, or risk that mattered.
+4. **Define the scope.** When this precedent should apply — narrower than the most tempting generalization.
+5. **Define the limits.** When it should not apply. If the next case differs materially, the agent should not reuse it blindly.
+6. **Add counterexamples.** Where useful, cases in which the precedent would mislead — these guard against overgeneralization.
+7. **Describe future use.** How a future agent should apply it, and when to surface the case back to the user instead. A precedent guides judgment; it does not override it.
+8. **Link back to the source.** Preserve the connection to the originating case, document, task, review, or conversation.
 
-The input should include:
+### Output
 
-- the concrete case
-- the judgment made
-- the reason for the judgment
-- the surrounding context
-- the tradeoff or ambiguity involved
-- any relevant documents, tasks, events, or examples
+A `core.precedent` document or a draft ready to become one.
 
-If there is no concrete source case, do not extract a precedent yet.
+### Exit condition
 
-## Method
+Complete when the precedent meets the `core.precedent` standard — concrete source case, judgment, rationale, scope, limits, and future-use guidance, with enough context to prevent overgeneralization. If scope or limits cannot be stated, mark the precedent tentative.
 
-### 1. Identify the source case
-
-Describe the actual situation that produced the judgment.
-
-Keep it concrete. Avoid abstracting too early.
-
-### 2. State the judgment
-
-Write what the user decided, preferred, rejected, corrected, or approved.
-
-Separate the judgment from the reasoning.
-
-### 3. Explain the rationale
-
-Capture why the judgment was made.
-
-Include the tradeoff, value, constraint, or risk that mattered.
-
-### 4. Define the scope
-
-State when this precedent should apply.
-
-The scope should be narrower than the most tempting generalization.
-
-### 5. Define the limits
-
-State when this precedent should not apply.
-
-If the next case differs materially, the agent should not blindly reuse the precedent.
-
-### 6. Add counterexamples
-
-When useful, include cases where the precedent would be misleading or wrong.
-
-Counterexamples protect the precedent from overgeneralization.
-
-### 7. Describe future use
-
-Explain how a future agent should use this precedent.
-
-A precedent should guide judgment, not override it.
-
-### 8. Link back to the source
-
-Preserve the connection to the source case, document, task, review, or conversation summary whenever possible.
-
-## Output
-
-The output should be a `core.precedent` document or a draft ready to become one.
-
-## Exit Condition
-
-This process is complete when the precedent has:
-
-- a concrete source case
-- the judgment
-- rationale
-- scope
-- limits
-- future-use guidance
-- enough context to prevent overgeneralization
-
-If scope or limits cannot be stated, mark the precedent as tentative.
-
-## Failure Modes
-
-Avoid:
+### Failure modes
 
 - extracting generic advice without a source case
-- turning one-off preference into broad policy
+- turning a one-off preference into broad policy
 - hiding uncertainty
 - making the precedent broader than the evidence supports
-- using precedent to bypass human judgment in materially different cases
+- using a precedent to bypass human judgment in materially different cases

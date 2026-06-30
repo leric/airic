@@ -6,56 +6,36 @@ title: Task
 
 # Task
 
-A task defines executable work for an agent.
+A task defines executable work for an agent. It is not a casual todo item; it is an executable contract. A good task carries enough clarified intent for an agent to act, verify progress, report blockers, and write results back without continuous human supervision.
 
-A task is not a casual todo item. It is an executable contract.
+### Purpose
 
-A good task gives an agent enough clarified intent to act, verify progress, report blockers, and write results back without continuous human supervision.
+Use a task when a piece of work is ready to be executed or delegated. A task should make clear what should be done, why it matters, what boundaries apply, and how success can be checked. If success cannot be stated, the work is not yet a task — it is still thinking.
 
-## Purpose
+### What an instance should contain
 
-Use a task when a piece of work is ready to be executed or delegated.
+A good task lets an agent answer, without re-asking:
 
-A task should carry the intent needed for execution.
+- **What** — objective, scope, non-goals, and expected output
+- **Why** — the background and why the work matters
+- **Boundaries** — constraints and the relevant context to work within
+- **How it's checked** — acceptance criteria, verification method, and writeback expectations
+- **Where to stop** — known risks or blockers, and the decisions the agent must escalate rather than make alone
 
-It should make clear what should be done, why it matters, what boundaries apply, and how success can be checked.
+These need not be rigid fields, but each should be answerable from the document.
 
-## What a Task Should Contain
+### What an instance should avoid
 
-A task should clarify:
+- hiding unresolved intent behind execution detail
+- turning vague exploration into a task before intent is stable
+- burying product, business, architecture, research, or strategic judgment inside implementation instructions
+- asking the agent to settle decisions that should be visible to the user, unless a clear precedent or policy applies
 
-- objective
-- background
-- scope
-- non-goals
-- relevant context
-- constraints
-- expected output
-- acceptance criteria
-- verification method
-- writeback expectations
-- known risks or blockers
-- decision points that must be escalated
-
-The task does not need to be expressed as rigid fields, but these questions should be answerable from the document.
-
-## What a Task Should Avoid
-
-A task should not hide unresolved intent.
-
-Do not turn vague exploration into a task.
-
-Do not bury product, business, architecture, research, or strategic judgment inside implementation instructions.
-
-Do not ask the agent to make decisions that should be surfaced to the user unless relevant precedent or policy clearly applies.
-
-## Editing Guidance
-
-When editing a task document:
+### Editing guidance
 
 - strengthen intent before adding execution detail
 - make scope and non-goals visible
-- make verification explicit where possible
+- make verification explicit wherever possible
 - identify missing context
-- surface unresolved judgment as blocker or decision request
-- avoid expanding the task beyond its original purpose
+- surface unresolved judgment as a blocker or decision request
+- keep the task within its original purpose

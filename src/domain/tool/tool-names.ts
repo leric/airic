@@ -9,8 +9,6 @@ export const KERNEL_TOOL_NAMES = {
   PROCESS_START: "process.start",
   PROCESS_COMPLETE: "process.complete",
   PROCESS_CANCEL: "process.cancel",
-  PROCESS_STATUS: "process.status",
-  PROCESS_LIST: "process.list",
   HISTORY_MOVE_CURSOR: "history.move_cursor",
   HISTORY_SUMMARIZE: "history.summarize",
   HISTORY_READ_TREE: "history.read_tree",

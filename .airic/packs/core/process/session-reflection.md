@@ -2,122 +2,52 @@
 id: core.process.session-reflection
 doc_type: core.process
 title: Session Reflection
-summary: Compress a thinking session into durable continuation state.
+summary: Reflect on the agent's own thinking and actions during a session to learn and improve.
 triggers:
-  - user asks to summarize the session
-  - user is about to stop or switch context
-  - discussion reached a meaningful boundary
-  - session produced decisions, tasks, or open loops
+  - a session reaches a meaningful boundary
+  - the user asks to review how the work went
+  - the agent hit notable friction, a correction, or a stretch worth learning from
+  - before stopping or switching context, while the trace is fresh
 outputs:
-  - session summary
+  - improvement proposals
+  - core.precedent
 activation: suggested
 ---
 
 # Session Reflection
 
-Session Reflection compresses a thinking session into durable state.
+Session Reflection turns a finished stretch of work into learning. The agent observes its own thinking and actions during the session, names what worked and what went wrong, attributes each to a cause, and proposes the smallest useful improvement — so the next session goes better. It reads the session's trace while the evidence is still fresh, much as a post-task design reflection reads the trace a code change leaves behind.
 
-Use this process at a natural boundary: when the user is stopping, switching context, preparing to hand off work, or asking what was concluded.
+### When to start
 
-The purpose is not to summarize everything. The purpose is to preserve what will matter later.
+Run it at a natural boundary, while the trajectory is still fresh — after a meaningful stretch of work, a correction, notable friction, or a surprisingly smooth run worth learning from, and before the user stops or switches context. Reflect at the seam, not mid-thread; do not interrupt active deep thinking.
 
-## Trigger
+### Input
 
-Start this process when:
+The session's actual trajectory: the conversation path with its branches and returns, where the user corrected or redirected the agent, which mode or process was active, which documents and context the agent used or struggled to find, and where it over-structured, under-structured, or misread intent.
 
-- the user asks to summarize the session
-- the user is about to stop
-- the discussion has reached a meaningful boundary
-- the user wants to continue later
-- the session produced decisions, tasks, precedents, or important open loops
-- the agent needs to prepare a handoff or writeback
+### Method
 
-Do not interrupt active deep thinking just to reflect.
+1. **Reconstruct the actual process.** Describe what the agent did, not what it should have done — where it looked, what it tried, where it was corrected, where things flowed. Work from what is already in context; the whole trace is here. This step does not re-read files or fetch a session log — it is observation, recall, reflect, and summary, not new retrieval.
+2. **Mark what worked.** Name the moves that helped the user think and the calls that landed well. Reflection is not only fault-finding; good moves are worth reinforcing.
+3. **Mark the friction.** Name derailments, over-structuring, premature execution, missed intent, wasted turns, or context pollution.
+4. **Attribute each to a cause.** For every win and friction, ask why. Distinguish a methodology gap (a mode, process, or document type that was unclear or missing), a workspace or context gap (information hard to find, a missing precedent), agent behavior (available signals ignored, shortcuts taken), and genuine ambiguity. The attribution matters more than the symptom.
+5. **Propose the smallest useful improvement.** Tie each repair to its cause and place it at the right layer — refine a methodology document, extract a precedent, adjust workspace structure, or surface a gap to the user. Prefer the smallest change that prevents a recurrence over a broad rewrite.
+6. **Surface; do not silently apply.** Changes to methodology, the pack, or the workspace are proposals for the user to decide. The agent does not quietly rewrite what it is or how the workspace is organized.
 
-## Input
+### Output
 
-The input may include:
+A compact reflection: what worked, what created friction with its attributed cause, and concrete improvement proposals at the right layer — plus any precedent candidates that emerged. Not every session needs changes; "this went well, nothing to repair" is a valid result.
 
-- the current conversation path
-- return summaries from digressions
-- current document content
-- open loops
-- decisions or decision candidates
-- task candidates
-- precedent candidates
-- files read or edited during the session
+### Exit condition
 
-## Method
+Complete when the notable wins and frictions are attributed, and each actionable one has a proposed improvement at the right layer or is consciously set aside. The user is left with clear, optional next steps rather than a backlog of vague intentions.
 
-### 1. Identify the main thread
+### Failure modes
 
-Name what the session was mainly about.
-
-Do not confuse side discussions with the main thread.
-
-### 2. Capture stable conclusions
-
-Record what became clearer or more settled.
-
-Do not present unresolved exploration as settled conclusion.
-
-### 3. Capture open loops
-
-List unresolved items that may matter later.
-
-Keep them lightweight. Do not force every open loop into a task.
-
-### 4. Identify task candidates
-
-If part of the discussion is executable, mark it as a task candidate.
-
-Only produce task drafts if the user asks or the intent is sufficiently clear.
-
-### 5. Identify precedent candidates
-
-If reusable judgment emerged, mark it as a precedent candidate.
-
-Do not extract a full precedent unless the case, judgment, rationale, and scope are clear enough.
-
-### 6. Identify document updates
-
-If workspace documents should be created or updated, name them.
-
-Do not silently create project documents unless the user asks or approves.
-
-### 7. Define the next return point
-
-State where the user can resume next time.
-
-The return point should be short and useful.
-
-## Output
-
-The output should be a compact reflection.
-
-It may include:
-
-- main thread
-- stable conclusions
-- open loops
-- task candidates
-- precedent candidates
-- document updates
-- suggested next entry point
-
-If the user wants a persistent artifact, write or update an appropriate workspace document.
-
-## Exit Condition
-
-This process is complete when the user has a reliable continuation point and does not need to keep the session state in their head.
-
-## Failure Modes
-
-Avoid:
-
-- summarizing every detail
-- inflating tentative thoughts into decisions
-- creating too many tasks
-- losing the distinction between main thread and side thread
-- producing a reflection that is too long to be useful
-- hiding unresolved questions
+- listing problems while ignoring what worked
+- naming a symptom without attributing a cause
+- vague suggestions like "be more careful" that cannot be acted on
+- silently editing methodology, pack, or workspace instead of proposing
+- over-reflecting on a smooth session, or turning reflection into blame
+- proposing a broad rewrite when a small repair at the right layer would do
