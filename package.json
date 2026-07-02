@@ -10,7 +10,8 @@
   "files": [
     "dist",
     ".airic/config.default.yml",
-    ".airic/packs/core"
+    ".airic/packs/core",
+    ".airic/packs/packman"
   ],
   "scripts": {
     "build": "tsc",

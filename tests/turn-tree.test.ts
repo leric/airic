@@ -271,3 +271,126 @@ describe("projectCursorPath with summary replacement", () => {
     ]);
   });
 });
+
+describe("projectCursorPath with compact toolTrace", () => {
+  const describeCall = (name: string, args: Record<string, unknown>) => {
+    if (name === "read") return `Read ${String(args.path ?? "file")}`;
+    return name;
+  };
+
+  it("projects compact toolTrace instead of only final assistant text", () => {
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
+    appendTurn(session, {
+      userMessage: "Read file",
+      assistantMessage: "Done reading.",
+      toolTrace: [
+        {
+          role: "user",
+          content: "Read file",
+          timestamp: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          role: "assistant",
+          content: "",
+          timestamp: "2026-01-01T00:00:01.000Z",
+          toolCalls: [
+            {
+              id: "call-1",
+              name: "read",
+              arguments: JSON.stringify({ path: "README.md" }),
+            },
+          ],
+        },
+        {
+          role: "tool_result",
+          toolCallId: "call-1",
+          content: "# Airic\n".repeat(100),
+          timestamp: "2026-01-01T00:00:02.000Z",
+        },
+        {
+          role: "assistant",
+          content: "Done reading.",
+          timestamp: "2026-01-01T00:00:03.000Z",
+        },
+      ],
+    });
+
+    const projected = projectCursorPath(session, { describeCall });
+    expect(projected.map((message) => message.role)).toEqual([
+      "user",
+      "assistant",
+      "tool_result",
+      "assistant",
+    ]);
+    expect(projected[2]).toMatchObject({
+      role: "tool_result",
+      content: "Read README.md — ok",
+    });
+  });
+
+  it("preserves compact tool actions when summary replaces a range", () => {
+    const session = createSession("s1", "/tmp", "core.mode.thinking-partner");
+    appendTurn(session, {
+      userMessage: "A",
+      assistantMessage: "Read done",
+      toolTrace: [
+        {
+          role: "user",
+          content: "A",
+          timestamp: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          role: "assistant",
+          content: "",
+          timestamp: "2026-01-01T00:00:01.000Z",
+          toolCalls: [
+            {
+              id: "call-1",
+              name: "read",
+              arguments: JSON.stringify({ path: "a.md" }),
+            },
+          ],
+        },
+        {
+          role: "tool_result",
+          toolCallId: "call-1",
+          content: "content",
+          timestamp: "2026-01-01T00:00:02.000Z",
+        },
+        {
+          role: "assistant",
+          content: "Read done",
+          timestamp: "2026-01-01T00:00:03.000Z",
+        },
+      ],
+    });
+    appendTurn(session, {
+      userMessage: "B",
+      assistantMessage: "B reply",
+    });
+    appendTurn(session, {
+      userMessage: "C",
+      assistantMessage: "C reply",
+    });
+
+    const path = cursorPath(session);
+    appendSummaryNode(session, {
+      parentId: path[1]!.id,
+      summaryMeta: {
+        source: { fromId: path[0]!.id, toId: path[1]!.id },
+        replacesRange: true,
+        prompt: "compress",
+        producedText: "AB summary",
+      },
+    });
+
+    expect(projectCursorPath(session, { describeCall }).map((m) => m.content)).toEqual([
+      "",
+      "Read a.md — ok",
+      "Read done",
+      "AB summary",
+      "C",
+      "C reply",
+    ]);
+  });
+});

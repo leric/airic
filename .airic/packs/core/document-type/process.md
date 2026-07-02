@@ -4,8 +4,6 @@ doc_type: core.document-type
 title: Process
 ---
 
-# Process
-
 A process defines a concrete, repeatable method, appropriate when the work has a recognizable trigger, input, steps, output, and exit condition. It is not a broad thinking posture.
 
 ### Purpose

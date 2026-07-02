@@ -42,6 +42,13 @@ export async function bootstrapWorkspace(
     createdPaths,
   );
 
+  await seedDirectoryIfMissing(
+    fs,
+    join(bundledAiricRoot, "packs", "packman"),
+    join(airicRoot, "packs", "packman"),
+    createdPaths,
+  );
+
   return { workspaceRoot, airicRoot, createdPaths };
 }
 

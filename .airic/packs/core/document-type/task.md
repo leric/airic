@@ -4,8 +4,6 @@ doc_type: core.document-type
 title: Task
 ---
 
-# Task
-
 A task defines executable work for an agent. It is not a casual todo item; it is an executable contract. A good task carries enough clarified intent for an agent to act, verify progress, report blockers, and write results back without continuous human supervision.
 
 ### Purpose

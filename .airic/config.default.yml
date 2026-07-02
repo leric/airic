@@ -6,6 +6,7 @@ llm:
 
 packs:
   core: .airic/packs/core
+  packman: .airic/packs/packman
 
 editing:
   require_confirmation: true

@@ -4,8 +4,6 @@ doc_type: core.document-type
 title: Document Type
 ---
 
-# Document Type
-
 A document type defines what a good document of a certain kind should be. It gives the agent a standard for reading, reviewing, creating, and editing documents of that kind — a quality standard written primarily in prose, not a rigid schema, template, or workflow.
 
 This type is self-describing: it defines every spec type — mode, process, tool, and document-type itself. Adding a new type means writing one more document that conforms to this definition; the kernel needs no code change.

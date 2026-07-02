@@ -33,6 +33,7 @@ import { parseSessionCommand } from "../../domain/session/session-command.js";
 import type { SessionCommand } from "../../domain/session/session-command.js";
 import type { Session } from "../../domain/session/session.js";
 import { appendTurn, projectCursorPath } from "../../domain/session/turn-tree.js";
+import type { CompactToolTraceOptions } from "../../domain/session/compact-tool-trace.js";
 import {
   AnchorError,
   applyHistoryChange,
@@ -129,7 +130,12 @@ export class SendMessageUseCase {
       refreshCurrentDocument,
     );
 
-    const priorMessages = projectCursorPath(session);
+    const projectionOptions: CompactToolTraceOptions = {
+      describeCall: (name, args) =>
+        this.deps.kernelTools.presentToolCall(name, args).title,
+    };
+
+    const priorMessages = projectCursorPath(session, projectionOptions);
 
     const result = await this.deps.agentRuntime.runTurn({
       sessionId: input.sessionId,

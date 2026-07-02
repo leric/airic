@@ -306,11 +306,13 @@ type Session = {
 
 Each `TurnNode` is one user message + one assistant response, with a stable `id`, a
 `parentId`, an auto-generated `title`, and an optional `toolTrace` (the full message slice
-incl. tool calls/results, kept for replay/export but excluded from default model context).
+incl. tool calls/results, kept for replay/export).
 
-`projectCursorPath(session)` walks `root → … → currentTurnId` and emits only user/assistant
-text pairs. This is the core anti-pollution mechanism: sibling branches and per-turn tool
-traces are not fed back into the model.
+`projectCursorPath(session)` walks `root → … → currentTurnId`. Turns with `toolTrace` are
+projected via `compactToolTraceForProjection()`: same `TranscriptMessage` shape as the
+current turn, but prior-turn `tool_result.content` is replaced with `{ACP title} — status`.
+Turns without tools still emit user/assistant text pairs. Sibling branches are excluded.
+Full tool return payloads are not fed back into the model.
 
 ### 8.2 Process instances
 

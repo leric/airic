@@ -4,8 +4,6 @@ doc_type: core.document-type
 title: Tool
 ---
 
-# Tool
-
 A tool document defines the usage methodology for one system tool. The callable contract — tool name, parameters, and hard constraints — lives in code; the tool document explains when to use the tool, how to combine it with others, and what to avoid. It is not the implementation, a cross-tool workflow, or a session posture.
 
 ### Purpose

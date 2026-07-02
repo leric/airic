@@ -29,9 +29,7 @@ export class YamlConfigLoader implements ConfigLoaderPort {
           100,
         ),
       },
-      packs: {
-        core: readString(readObject(parsed.packs).core, ".airic/packs/core"),
-      },
+      packs: readPackConfig(parsed.packs),
       editing: {
         requireConfirmation: readBoolean(
           readObject(parsed.editing).require_confirmation,
@@ -43,6 +41,24 @@ export class YamlConfigLoader implements ConfigLoaderPort {
       },
     };
   }
+}
+
+function readPackConfig(value: unknown): AiricConfig["packs"] {
+  const packsObject = readObject(value);
+  const packs: Record<string, string> = {
+    core: readString(packsObject.core, ".airic/packs/core"),
+  };
+
+  for (const [name, path] of Object.entries(packsObject)) {
+    if (name === "core") {
+      continue;
+    }
+    if (typeof path === "string" && path.length > 0) {
+      packs[name] = path;
+    }
+  }
+
+  return packs;
 }
 
 function readObject(value: unknown): Record<string, unknown> {

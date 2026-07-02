@@ -12,7 +12,7 @@ export type RuntimeContextInput = {
 };
 
 export class RuntimeContextBuilder {
-  /** Builds the system prompt only. Message history context is `projectCursorPath()` in `domain/session/turn-tree.ts`. */
+  /** Builds the system prompt only. Message history context is `projectCursorPath()` in `domain/session/turn-tree.ts` (compact prior-turn tool traces). */
   buildSystemPrompt(input: RuntimeContextInput): string {
     const systemParts = [
       input.baseInstruction.trim(),

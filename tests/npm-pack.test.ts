@@ -32,6 +32,9 @@ describe("npm pack", () => {
       expect(listing).toContain(
         "package/.airic/packs/core/mode/thinking-partner.md",
       );
+      expect(listing).toContain(
+        "package/.airic/packs/packman/mode/packsmith.md",
+      );
       expect(listing).toContain("package/.airic/config.default.yml");
       expect(listing).not.toMatch(/package\/\.airic\/sessions\//);
       expect(listing).not.toMatch(/package\/\.airic\/logs\//);
@@ -62,6 +65,9 @@ describe("npm pack", () => {
       const configPath = join(workspaceRoot, ".airic", "config.yml");
       await expect(readFile(configPath, "utf8")).resolves.toContain(
         "core.mode.thinking-partner",
+      );
+      await expect(readFile(configPath, "utf8")).resolves.toContain(
+        "packman: .airic/packs/packman",
       );
     } finally {
       await rm(tarballPath, { force: true });

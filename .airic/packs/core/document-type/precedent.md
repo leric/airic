@@ -4,8 +4,6 @@ doc_type: core.document-type
 title: Precedent
 ---
 
-# Precedent
-
 A precedent preserves reusable human judgment from a concrete case. It is not a generic rule; it is judgment extracted from an actual situation, carrying its context, rationale, scope, and limits. Precedents let future agents act with better judgment without re-asking the user to resolve the same kind of issue.
 
 ### Purpose

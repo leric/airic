@@ -5,3 +5,4 @@ dist/
 .airic/cache/
 .env
 *.log
+gstack/

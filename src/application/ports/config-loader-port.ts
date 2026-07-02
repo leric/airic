@@ -12,6 +12,8 @@ export type ThinkingLevel =
   | "high"
   | "xhigh";
 
+import type { PackConfig } from "../../domain/document/document-id.js";
+
 export type AiricConfig = {
   defaultMode: string;
   llm: {
@@ -29,9 +31,7 @@ export type AiricConfig = {
      */
     maxToolRounds: number;
   };
-  packs: {
-    core: string;
-  };
+  packs: PackConfig;
   editing: {
     requireConfirmation: boolean;
   };

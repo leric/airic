@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { TranscriptMessage } from "../agent/transcript.js";
 import type { Session } from "./session.js";
+import {
+  appendCompactToolTrace,
+  compactToolTraceForProjection,
+  type CompactToolTraceOptions,
+} from "./compact-tool-trace.js";
 import { validateSummaryMeta } from "./tree-invariants.js";
 import {
   generateTurnTitle,
@@ -181,7 +186,10 @@ export function activeReplacingSummaryStartingAt(
   return candidates[0];
 }
 
-export function renderNodeForProjection(node: TurnNode): TranscriptMessage[] {
+export function renderNodeForProjection(
+  node: TurnNode,
+  options?: CompactToolTraceOptions,
+): TranscriptMessage[] {
   const timestamp = node.createdAt;
 
   if (node.kind === "summary" && node.summaryMeta) {
@@ -196,6 +204,10 @@ export function renderNodeForProjection(node: TurnNode): TranscriptMessage[] {
 
   if (node.kind === "extension") {
     return [];
+  }
+
+  if (node.toolTrace && node.toolTrace.length > 0) {
+    return compactToolTraceForProjection(node.toolTrace, options);
   }
 
   const messages: TranscriptMessage[] = [];
@@ -217,8 +229,11 @@ export function renderNodeForProjection(node: TurnNode): TranscriptMessage[] {
 }
 
 /** Active cursor path for model context with summary range replacement.
- *  Excludes sibling branches and per-turn `toolTrace`. */
-export function projectCursorPath(session: Session): TranscriptMessage[] {
+ *  Excludes sibling branches. Prior-turn tool traces are projected in compact form. */
+export function projectCursorPath(
+  session: Session,
+  options?: CompactToolTraceOptions,
+): TranscriptMessage[] {
   const path = cursorPath(session);
   const messages: TranscriptMessage[] = [];
 
@@ -228,17 +243,30 @@ export function projectCursorPath(session: Session): TranscriptMessage[] {
     const replacing = activeReplacingSummaryStartingAt(session, node, path);
 
     if (replacing?.summaryMeta) {
+      const fromIndex = path.findIndex(
+        (n) => n.id === replacing.summaryMeta!.source.fromId,
+      );
+      const toIndex = path.findIndex(
+        (n) => n.id === replacing.summaryMeta!.source.toId,
+      );
+
+      for (const skippedNode of path.slice(fromIndex, toIndex + 1)) {
+        if (skippedNode.toolTrace && skippedNode.toolTrace.length > 0) {
+          appendCompactToolTrace(messages, skippedNode.toolTrace, {
+            ...options,
+            skipLeadingUser: true,
+          });
+        }
+      }
+
       messages.push({
         role: "assistant",
         content: replacing.summaryMeta.producedText,
         timestamp: replacing.createdAt,
       });
-      const toIndex = path.findIndex(
-        (n) => n.id === replacing.summaryMeta!.source.toId,
-      );
       i = toIndex + 1;
     } else {
-      messages.push(...renderNodeForProjection(node));
+      messages.push(...renderNodeForProjection(node, options));
       i += 1;
     }
   }
